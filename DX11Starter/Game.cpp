@@ -170,18 +170,19 @@ void Game::CreateBasicGeometry()
 	// - We're going to copy this array, exactly as it exists in memory
 	//    over to a DirectX-controlled data structure (the vertex buffer)
 	std::vector<Vertex> vertices[] = {
-		{ Vertex({ XMFLOAT3(-1.0f, +0.5f, +0.0f), red }),
-		  Vertex({ XMFLOAT3(-1.0f, +1.5f, +0.0f), blue }),
-		  Vertex({ XMFLOAT3(-0.5f, +0.5f, +0.0f), green }) },
+		{ Vertex({ XMFLOAT3(-2.0f, +0.5f, +0.0f), red }),
+		  Vertex({ XMFLOAT3(-2.0f, +1.5f, +0.0f), blue }),
+		  Vertex({ XMFLOAT3(-1.5f, +0.5f, +0.0f), green }) },
 
 		{ Vertex({ XMFLOAT3(+0.0f, +0.0f, +0.0f), maroon }),
 		  Vertex({ XMFLOAT3(+0.5f, +1.0f, +0.0f), silver }),
-		  Vertex({ XMFLOAT3(+0.5f, +0.5f, +0.0f), aqua })},
+		  Vertex({ XMFLOAT3(+0.5f, +0.5f, +0.0f), aqua }),
+		  Vertex({ XMFLOAT3(-1.0f, +0.5f, +0.0f), red })},
 
-		{ Vertex({ XMFLOAT3(+0.0f, +0.0f, +0.0f), fuchsia }),
-		  Vertex({ XMFLOAT3(+2.0f, +0.0f, +0.0f), white }),
+		{ Vertex({ XMFLOAT3(+1.0f, +1.0f, +0.0f), fuchsia }),
+		  Vertex({ XMFLOAT3(+2.0f, +1.0f, +0.0f), white }),
 		  Vertex({ XMFLOAT3(+2.0f, -2.0f, +0.0f), olive }),
-		  Vertex({ XMFLOAT3(-1.0f, -1.0f, +0.0f), maroon })},
+		  Vertex({ XMFLOAT3(+1.0f, -2.0f, +0.0f), maroon })},
 	};
 
 
@@ -192,8 +193,8 @@ void Game::CreateBasicGeometry()
 	// - But just to see how it's done...
 	std::vector<unsigned int> indices[] = {
 		{ 0, 1, 2 },
-		{ 0, 1, 2 },
-		{ 1, 2, 3, 0 },
+		{ 0, 1, 2, 3, 2, 0 },
+		{ 0, 1, 2, 0, 2, 3 },
 	};
 
 	// Set up the vector for the mesh objects.
@@ -205,7 +206,7 @@ void Game::CreateBasicGeometry()
 	for (size_t i = 0; i < (size_t)meshCount; i++) {
 		Vertex* v = vertices[i].data();
 		unsigned int* w = indices[i].data();
-		meshObjects->push_back(new Mesh(v, vertices[i].size(), w, indices[i].size(), device));
+		meshObjects->push_back(new Mesh(v, static_cast<unsigned int>(vertices[i].size()), w, static_cast<unsigned int>(indices[i].size()), device));
 	}
 }
 

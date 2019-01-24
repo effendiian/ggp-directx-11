@@ -44,7 +44,7 @@ This branch contains the work for [Assignment 2: Meshes](https://mycourses.rit.e
 
 [x] No **memory leaks** and **DirectX resources released** properly.
 
-[ ] No **warnings**. One issue involving size_t, that may not be able to be fixed.
+[x] No **warnings**.
 
 ## Binaries Not Included ##
 
