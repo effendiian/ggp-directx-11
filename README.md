@@ -26,11 +26,7 @@ Throughout the semester, students were assigned different sections of the code t
 
 *Course syllabus.*
 
-## Master ##
-
-The master branch will always be the most feature complete; the most recent assignment will be merged back into the master after submission.
-
-## This Branch ##
+## Starter Code ##
 
 This branch contains the starter code for the course engine.
 
