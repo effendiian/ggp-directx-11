@@ -26,10 +26,6 @@ Throughout the semester, students were assigned different sections of the code t
 
 *Course syllabus.*
 
-## Master ##
-
-The master branch will always be the most feature complete; the most recent assignment will be merged back into the master after submission.
-
 ## Assignment 2 - Meshes ##
 
 This branch contains the work for [Assignment 2: Meshes](https://mycourses.rit.edu/d2l/le/content/736702/viewContent/5582570/View) (link requires access to MyCourses).
