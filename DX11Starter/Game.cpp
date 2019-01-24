@@ -21,17 +21,19 @@ Game::Game(HINSTANCE hInstance)
 		true)			// Show extra stats (fps) in title bar?
 {
 	// Initialize fields
-	vertexBuffer = 0;
-	indexBuffer = 0;
 	vertexShader = 0;
 	pixelShader = 0;
+
+	// Initialize the meshes.
+	this->meshCount = 3;
+	this->meshObjects = nullptr;
 
 #if defined(DEBUG) || defined(_DEBUG)
 	// Do we want a console window?  Probably only in debug mode
 	CreateConsoleWindow(500, 120, 32, 120);
 	printf("Console window created successfully.  Feel free to printf() here.\n");
 #endif
-	
+
 }
 
 // --------------------------------------------------------
@@ -41,10 +43,14 @@ Game::Game(HINSTANCE hInstance)
 // --------------------------------------------------------
 Game::~Game()
 {
-	// Release any (and all!) DirectX objects
-	// we've made in the Game class
-	if (vertexBuffer) { vertexBuffer->Release(); }
-	if (indexBuffer) { indexBuffer->Release(); }
+	// Equivalent to vector_ptr->clear():
+	/* for (int i = 0; i < meshCount; i++) {
+		delete (*meshObjects)[i]; // delete each element in the dereferenced vector.
+	}*/
+
+	// Clean up our meshes.
+	meshObjects->clear(); // Destroy each object stored in the dereferenced pointer. (However memory is still allocated).
+	delete meshObjects; // Delete the vector pointer to deallocate the memory.
 
 	// Delete our simple shader objects, which
 	// will clean up their own internal DirectX stuff
@@ -66,7 +72,7 @@ void Game::Init()
 	CreateBasicGeometry();
 
 	// Tell the input assembler stage of the pipeline what kind of
-	// geometric primitives (points, lines or triangles) we want to draw.  
+	// geometric primitives (points, lines or triangles) we want to draw.
 	// Essentially: "What kind of shape should the GPU draw with our data?"
 	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
@@ -89,7 +95,7 @@ void Game::LoadShaders()
 
 
 // --------------------------------------------------------
-// Initializes the matrices necessary to represent our geometry's 
+// Initializes the matrices necessary to represent our geometry's
 // transformations and our 3D camera
 // --------------------------------------------------------
 void Game::CreateMatrices()
@@ -104,7 +110,7 @@ void Game::CreateMatrices()
 	XMStoreFloat4x4(&worldMatrix, XMMatrixTranspose(W)); // Transpose for HLSL!
 
 	// Create the View matrix
-	// - In an actual game, recreate this matrix every time the camera 
+	// - In an actual game, recreate this matrix every time the camera
 	//    moves (potentially every frame)
 	// - We're using the LOOK TO function, which takes the position of the
 	//    camera and the direction vector along which to look (as well as "up")
@@ -138,69 +144,69 @@ void Game::CreateBasicGeometry()
 {
 	// Create some temporary variables to represent colors
 	// - Not necessary, just makes things more readable
-	XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
+	std::vector<XMFLOAT4> colors;
+	colors.push_back(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)); // red;
+	colors.push_back(XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)); // green;
+	colors.push_back(XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)); // blue;
+	colors.push_back(XMFLOAT4(0.5f, 0.0f, 0.0f, 1.0f)); // maroon;
+	colors.push_back(XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f)); // aqua;
+	colors.push_back(XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)); // silver;
+	colors.push_back(XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f)); // fuchsia;
+	colors.push_back(XMFLOAT4(0.5f, 0.5f, 0.0f, 1.0f)); // olive;
+	colors.push_back(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)); // white;
+
+	// Name colors for ease of use.
+	XMFLOAT4 red = colors[0];
+	XMFLOAT4 green = colors[1];
+	XMFLOAT4 blue = colors[2];
+	XMFLOAT4 maroon = colors[3];
+	XMFLOAT4 aqua = colors[4];
+	XMFLOAT4 silver = colors[5];
+	XMFLOAT4 fuchsia = colors[6];
+	XMFLOAT4 olive = colors[7];
+	XMFLOAT4 white = colors[8];
 
 	// Set up the vertices of the triangle we would like to draw
 	// - We're going to copy this array, exactly as it exists in memory
 	//    over to a DirectX-controlled data structure (the vertex buffer)
-	Vertex vertices[] =
-	{
-		{ XMFLOAT3(+0.0f, +1.0f, +0.0f), red },
-		{ XMFLOAT3(+1.5f, -1.0f, +0.0f), blue },
-		{ XMFLOAT3(-1.5f, -1.0f, +0.0f), green },
+	std::vector<Vertex> vertices[] = {
+		{ Vertex({ XMFLOAT3(-1.0f, +0.5f, +0.0f), red }),
+		  Vertex({ XMFLOAT3(-1.0f, +1.5f, +0.0f), blue }),
+		  Vertex({ XMFLOAT3(-0.5f, +0.5f, +0.0f), green }) },
+
+		{ Vertex({ XMFLOAT3(+0.0f, +0.0f, +0.0f), maroon }),
+		  Vertex({ XMFLOAT3(+0.5f, +1.0f, +0.0f), silver }),
+		  Vertex({ XMFLOAT3(+0.5f, +0.5f, +0.0f), aqua })},
+
+		{ Vertex({ XMFLOAT3(+0.0f, +0.0f, +0.0f), fuchsia }),
+		  Vertex({ XMFLOAT3(+2.0f, +0.0f, +0.0f), white }),
+		  Vertex({ XMFLOAT3(+2.0f, -2.0f, +0.0f), olive }),
+		  Vertex({ XMFLOAT3(-1.0f, -1.0f, +0.0f), maroon })},
 	};
+
 
 	// Set up the indices, which tell us which vertices to use and in which order
 	// - This is somewhat redundant for just 3 vertices (it's a simple example)
-	// - Indices are technically not required if the vertices are in the buffer 
+	// - Indices are technically not required if the vertices are in the buffer
 	//    in the correct order and each one will be used exactly once
 	// - But just to see how it's done...
-	int indices[] = { 0, 1, 2 };
+	std::vector<unsigned int> indices[] = {
+		{ 0, 1, 2 },
+		{ 0, 1, 2 },
+		{ 1, 2, 3, 0 },
+	};
 
+	// Set up the vector for the mesh objects.
+	this->meshObjects = new std::vector<Mesh*>;
 
-	// Create the VERTEX BUFFER description -----------------------------------
-	// - The description is created on the stack because we only need
-	//    it to create the buffer.  The description is then useless.
-	D3D11_BUFFER_DESC vbd;
-	vbd.Usage = D3D11_USAGE_IMMUTABLE;
-	vbd.ByteWidth = sizeof(Vertex) * 3;       // 3 = number of vertices in the buffer
-	vbd.BindFlags = D3D11_BIND_VERTEX_BUFFER; // Tells DirectX this is a vertex buffer
-	vbd.CPUAccessFlags = 0;
-	vbd.MiscFlags = 0;
-	vbd.StructureByteStride = 0;
-
-	// Create the proper struct to hold the initial vertex data
-	// - This is how we put the initial data into the buffer
-	D3D11_SUBRESOURCE_DATA initialVertexData;
-	initialVertexData.pSysMem = vertices;
-
-	// Actually create the buffer with the initial data
-	// - Once we do this, we'll NEVER CHANGE THE BUFFER AGAIN
-	device->CreateBuffer(&vbd, &initialVertexData, &vertexBuffer);
-
-
-
-	// Create the INDEX BUFFER description ------------------------------------
-	// - The description is created on the stack because we only need
-	//    it to create the buffer.  The description is then useless.
-	D3D11_BUFFER_DESC ibd;
-	ibd.Usage = D3D11_USAGE_IMMUTABLE;
-	ibd.ByteWidth = sizeof(int) * 3;         // 3 = number of indices in the buffer
-	ibd.BindFlags = D3D11_BIND_INDEX_BUFFER; // Tells DirectX this is an index buffer
-	ibd.CPUAccessFlags = 0;
-	ibd.MiscFlags = 0;
-	ibd.StructureByteStride = 0;
-
-	// Create the proper struct to hold the initial index data
-	// - This is how we put the initial data into the buffer
-	D3D11_SUBRESOURCE_DATA initialIndexData;
-	initialIndexData.pSysMem = indices;
-
-	// Actually create the buffer with the initial data
-	// - Once we do this, we'll NEVER CHANGE THE BUFFER AGAIN
-	device->CreateBuffer(&ibd, &initialIndexData, &indexBuffer);
+	// Convert vectors back into pointer array (so we don't have to rewrite the Mesh class).
+	// Notes on doing this found here: https://stackoverflow.com/questions/2923272/how-to-convert-vector-to-array
+	// Spec says that vectors are guaranteed to be contiguous in memory; so we can get the address to the first element.
+	for (size_t i = 0; i < (size_t)meshCount; i++) {
+		Vertex* v = vertices[i].data();
+		unsigned int* w = indices[i].data();
+		meshObjects->push_back(new Mesh(v, vertices[i].size(), w, indices[i].size(), device));
+	}
 }
 
 
@@ -253,7 +259,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	// Send data to shader variables
 	//  - Do this ONCE PER OBJECT you're drawing
 	//  - This is actually a complex process of copying data to a local buffer
-	//    and then copying that entire buffer to the GPU.  
+	//    and then copying that entire buffer to the GPU.
 	//  - The "SimpleShader" class handles all of that for you.
 	vertexShader->SetMatrix4x4("world", worldMatrix);
 	vertexShader->SetMatrix4x4("view", viewMatrix);
@@ -271,24 +277,34 @@ void Game::Draw(float deltaTime, float totalTime)
 	vertexShader->SetShader();
 	pixelShader->SetShader();
 
-	// Set buffers in the input assembler
-	//  - Do this ONCE PER OBJECT you're drawing, since each object might
-	//    have different geometry.
-	UINT stride = sizeof(Vertex);
-	UINT offset = 0;
-	context->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-	context->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	// Loop through the meshes.
+	for (int i = 0; i < meshCount; i++) {
 
-	// Finally do the actual drawing
-	//  - Do this ONCE PER OBJECT you intend to draw
-	//  - This will use all of the currently set DirectX "stuff" (shaders, buffers, etc)
-	//  - DrawIndexed() uses the currently set INDEX BUFFER to look up corresponding
-	//     vertices in the currently set VERTEX BUFFER
-	context->DrawIndexed(
-		3,     // The number of indices to use (we could draw a subset if we wanted)
-		0,     // Offset to the first index we want to use
-		0);    // Offset to add to each index when looking up vertices
+		// Collect the buffers from the meshes.
+		Mesh* mesh = (*meshObjects)[i];
+		ID3D11Buffer* buffers[2] = {
+			mesh->GetVertexBuffer(),
+			mesh->GetIndexBuffer()
+		};
 
+		// Set buffers in the input assembler
+		//  - Do this ONCE PER OBJECT you're drawing, since each object might
+		//    have different geometry.
+		UINT stride = sizeof(Vertex); // Question for Professor: Where would stride and offset be tied to? Is it input alongside the Vertex data?
+		UINT offset = 0;
+		context->IASetVertexBuffers(0, 1, &buffers[0], &stride, &offset);
+		context->IASetIndexBuffer(buffers[1], DXGI_FORMAT_R32_UINT, 0);
+
+		// Finally do the actual drawing
+		//  - Do this ONCE PER OBJECT you intend to draw
+		//  - This will use all of the currently set DirectX "stuff" (shaders, buffers, etc)
+		//  - DrawIndexed() uses the currently set INDEX BUFFER to look up corresponding
+		//     vertices in the currently set VERTEX BUFFER
+		context->DrawIndexed(
+			mesh->GetIndexCount(),     // The number of indices to use (we could draw a subset if we wanted)
+			0,     // Offset to the first index we want to use
+			0);    // Offset to add to each index when looking up vertices
+	}
 
 
 	// Present the back buffer to the user
@@ -333,7 +349,7 @@ void Game::OnMouseUp(WPARAM buttonState, int x, int y)
 
 // --------------------------------------------------------
 // Helper method for mouse movement.  We only get this message
-// if the mouse is currently over the window, or if we're 
+// if the mouse is currently over the window, or if we're
 // currently capturing the mouse.
 // --------------------------------------------------------
 void Game::OnMouseMove(WPARAM buttonState, int x, int y)
@@ -346,8 +362,8 @@ void Game::OnMouseMove(WPARAM buttonState, int x, int y)
 }
 
 // --------------------------------------------------------
-// Helper method for mouse wheel scrolling.  
-// WheelDelta may be positive or negative, depending 
+// Helper method for mouse wheel scrolling.
+// WheelDelta may be positive or negative, depending
 // on the direction of the scroll
 // --------------------------------------------------------
 void Game::OnMouseWheel(float wheelDelta, int x, int y)
