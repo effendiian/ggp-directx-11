@@ -36,11 +36,15 @@ This branch contains the work for [Assignment 2: Meshes](https://mycourses.rit.e
 
 ### Overview ###
 
-[] **Mesh class** to hold geometry data (vertices & indices) in DirectX buffers.
-[] **Three Mesh objects**, with different geometry, in the Game Class.
-[] Meshes can be **drawn** to the screen.
-[] No **memory leaks** and **DirectX resources released** properly.
-[] No **warnings**.
+[ ] **Mesh class** to hold geometry data (vertices & indices) in DirectX buffers.
+
+[ ] **Three Mesh objects**, with different geometry, in the Game Class.
+
+[ ] Meshes can be **drawn** to the screen.
+
+[ ] No **memory leaks** and **DirectX resources released** properly.
+
+[ ] No **warnings**.
 
 ## Binaries Not Included ##
 
