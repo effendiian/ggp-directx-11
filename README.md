@@ -30,9 +30,17 @@ Throughout the semester, students were assigned different sections of the code t
 
 The master branch will always be the most feature complete; the most recent assignment will be merged back into the master after submission.
 
-## This Branch ##
+## Assignment 2 - Meshes ##
 
-This branch contains the starter code for the course engine.
+This branch contains the work for [Assignment 2: Meshes](https://mycourses.rit.edu/d2l/le/content/736702/viewContent/5582570/View) (link requires access to MyCourses).
+
+### Overview ###
+
+[] **Mesh class** to hold geometry data (vertices & indices) in DirectX buffers.
+[] **Three Mesh objects**, with different geometry, in the Game Class.
+[] Meshes can be **drawn** to the screen.
+[] No **memory leaks** and **DirectX resources released** properly.
+[] No **warnings**.
 
 ## Binaries Not Included ##
 
