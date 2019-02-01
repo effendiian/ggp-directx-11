@@ -25,8 +25,7 @@ Game::Game(HINSTANCE hInstance)
 	pixelShader = 0;
 
 	// Initialize the meshes.
-	this->meshCount = 3;
-	this->meshObjects = nullptr;
+	meshCount = 3;
 
 #if defined(DEBUG) || defined(_DEBUG)
 	// Do we want a console window?  Probably only in debug mode
@@ -43,14 +42,22 @@ Game::Game(HINSTANCE hInstance)
 // --------------------------------------------------------
 Game::~Game()
 {
-	// Equivalent to vector_ptr->clear():
-	/* for (int i = 0; i < meshCount; i++) {
-		delete (*meshObjects)[i]; // delete each element in the dereferenced vector.
-	}*/
+	// When the vector is a collection of pointers,
+	// that are allocated with new, we need to
+	// accompany each mesh with a delete call.
 
-	// Clean up our meshes.
-	meshObjects->clear(); // Destroy each object stored in the dereferenced pointer. (However memory is still allocated).
-	delete meshObjects; // Delete the vector pointer to deallocate the memory.
+	// Clear will not delete them if the contained
+	// items are pointers.
+	for (int i = 0; i < meshCount; i++) {
+		delete meshObjects[i]; // Delete each pointer contained in the vector.
+	}
+
+	// Clear the vector and then swap it to deallocate its memory.
+	meshObjects.clear();
+	std::vector<Mesh*>().swap(meshObjects);
+
+	// if (meshObjects) { meshObjects->clear(); } // Destroy each object stored in the dereferenced pointer. (However memory is still allocated).
+	// delete meshObjects; // Delete the vector pointer to deallocate the memory.
 
 	// Delete our simple shader objects, which
 	// will clean up their own internal DirectX stuff
@@ -198,7 +205,8 @@ void Game::CreateBasicGeometry()
 	};
 
 	// Set up the vector for the mesh objects.
-	this->meshObjects = new std::vector<Mesh*>;
+	// meshObjects = std::vector<std::unique_ptr<Mesh>>();
+	meshObjects = std::vector<Mesh*>();
 
 	// Convert vectors back into pointer array (so we don't have to rewrite the Mesh class).
 	// Notes on doing this found here: https://stackoverflow.com/questions/2923272/how-to-convert-vector-to-array
@@ -206,7 +214,13 @@ void Game::CreateBasicGeometry()
 	for (size_t i = 0; i < (size_t)meshCount; i++) {
 		Vertex* v = vertices[i].data();
 		unsigned int* w = indices[i].data();
-		meshObjects->push_back(new Mesh(v, static_cast<unsigned int>(vertices[i].size()), w, static_cast<unsigned int>(indices[i].size()), device));
+		meshObjects.push_back(
+			new Mesh(
+				v, static_cast<unsigned int>(vertices[i].size()),
+				w, static_cast<unsigned int>(indices[i].size()),
+				device
+			)
+		);
 	}
 }
 
@@ -282,7 +296,8 @@ void Game::Draw(float deltaTime, float totalTime)
 	for (int i = 0; i < meshCount; i++) {
 
 		// Collect the buffers from the meshes.
-		Mesh* mesh = (*meshObjects)[i];
+		Mesh* mesh = meshObjects[i];
+
 		ID3D11Buffer* buffers[2] = {
 			mesh->GetVertexBuffer(),
 			mesh->GetIndexBuffer()
@@ -304,7 +319,8 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->DrawIndexed(
 			mesh->GetIndexCount(),     // The number of indices to use (we could draw a subset if we wanted)
 			0,     // Offset to the first index we want to use
-			0);    // Offset to add to each index when looking up vertices
+			0	   // Offset to add to each index when looking up vertices
+		);
 	}
 
 

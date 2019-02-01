@@ -35,7 +35,7 @@ private:
 
 	// Buffers to hold actual geometry data
 	int meshCount;
-	std::vector<Mesh*>* meshObjects;
+	std::vector<Mesh*> meshObjects;
 
 	// Wrappers for DirectX shaders to provide simplified functionality
 	SimpleVertexShader* vertexShader;
