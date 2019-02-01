@@ -30,21 +30,21 @@ Throughout the semester, students were assigned different sections of the code t
 
 The master branch will always be the most feature complete; the most recent assignment will be merged back into the master after submission.
 
-## Assignment 2 - Meshes ##
+## Assignment 3 - Making Things Move ##
 
-This branch contains the work for [Assignment 2: Meshes](https://mycourses.rit.edu/d2l/le/content/736702/viewContent/5582570/View) (link requires access to MyCourses).
+This branch contains the work for [Assignment 3: Making Things Move](https://mycourses.rit.edu/d2l/le/content/736702/viewContent/5582574/View) (link requires access to MyCourses).
 
 ### Overview ###
 
-[x] **Mesh class** to hold geometry data (vertices & indices) in DirectX buffers.
+[] Create a class that represents individual **game entities** and their transformations.
 
-[x] **Three Mesh objects**, with different geometry, in the Game Class.
+[] Ensure that Meshes can be **shared** among multiple entities.
 
-[x] Meshes can be **drawn** to the screen.
+[] **Create** and **draw** at least 5 shared entities, with several sharing the same Mesh object.
 
-[x] No **memory leaks** and **DirectX resources released** properly.
+[] **Update** your entity transformations each frame so the entities move/scale/etc.
 
-[x] No **warnings**.
+[] Ensure you have no **warnings**, **memory leaks** or **DX resource leaks**.
 
 ## Binaries Not Included ##
 

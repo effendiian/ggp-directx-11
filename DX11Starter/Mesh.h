@@ -15,9 +15,9 @@ public:
 	~Mesh();
 
 	// Accessor methods called to return buffers.
-	ID3D11Buffer* GetVertexBuffer();
-	ID3D11Buffer* GetIndexBuffer();
-	unsigned int GetIndexCount();
+	ID3D11Buffer* GetVertexBuffer() const;
+	ID3D11Buffer* GetIndexBuffer() const;
+	unsigned int GetIndexCount() const;
 
 private:
 

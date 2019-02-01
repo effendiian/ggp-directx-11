@@ -2,6 +2,7 @@
 
 #include "DXCore.h"
 #include "Mesh.h"
+#include "GameEntity.h"
 #include "SimpleShader.h"
 #include <DirectXMath.h>
 #include <vector>
@@ -32,10 +33,18 @@ private:
 	void LoadShaders();
 	void CreateMatrices();
 	void CreateBasicGeometry();
+	void CreateEntities();
 
 	// Buffers to hold actual geometry data
 	int meshCount;
-	std::vector<Mesh*> meshObjects;
+	// std::vector<Mesh*> meshObjects;
+	std::vector<std::shared_ptr<Mesh>> meshObjects;
+
+	// Entities.
+	int entityCount;
+	std::vector<GameEntity*> entities_a;
+	std::vector<GameEntity*> entities_b;
+	std::vector<GameEntity*> entities_c;
 
 	// Wrappers for DirectX shaders to provide simplified functionality
 	SimpleVertexShader* vertexShader;

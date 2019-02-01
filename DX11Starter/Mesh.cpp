@@ -53,7 +53,7 @@ Mesh::~Mesh()
 /// Returns pointer to the vertex buffer.
 /// </summary>
 /// <returns>Returns Vertex Buffer pointer.</returns>
-ID3D11Buffer* Mesh::GetVertexBuffer() {
+ID3D11Buffer* Mesh::GetVertexBuffer() const {
 	return vertexBuffer;
 }
 
@@ -61,7 +61,7 @@ ID3D11Buffer* Mesh::GetVertexBuffer() {
 /// Returns pointer to the index buffer.
 /// </summary>
 /// <returns>Returns Index Buffer pointer.</returns>
-ID3D11Buffer* Mesh::GetIndexBuffer() {
+ID3D11Buffer* Mesh::GetIndexBuffer() const {
 	return indexBuffer;
 }
 
@@ -69,7 +69,7 @@ ID3D11Buffer* Mesh::GetIndexBuffer() {
 /// Return number of indices in index buffer.
 /// </summary>
 /// <returns>Return index count.</returns>
-unsigned int Mesh::GetIndexCount() {
+unsigned int Mesh::GetIndexCount() const {
 	return indexCount;
 }
 
