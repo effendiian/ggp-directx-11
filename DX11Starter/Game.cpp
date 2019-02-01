@@ -1,5 +1,7 @@
 #include "Game.h"
 #include "Vertex.h"
+#include <ctime>
+#include <cstdlib>
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -18,17 +20,31 @@ Game::Game(HINSTANCE hInstance)
 		"DirectX Game",	   	// Text for the window's title bar
 		1280,			// Width of the window's client area
 		720,			// Height of the window's client area
-		true)			// Show extra stats (fps) in title bar?
+		true) // Show extra stats (fps) in title bar?
 {
+	// -----------------
 	// Initialize fields
+
+	// Initialize shaders.
 	vertexShader = 0;
 	pixelShader = 0;
 
+	// Initialize
+	worldMatrix = XMFLOAT4X4();
+	viewMatrix = XMFLOAT4X4();
+	projectionMatrix = XMFLOAT4X4();
+	prevMousePos = POINT();
+
 	// Initialize the meshes.
 	meshCount = 3;
-	entityCount = 3;
+	entityCount = 9;
+
+	// -----------------
+	// Seed the random number generator.
+	srand(static_cast<unsigned> (time(0)));
 
 #if defined(DEBUG) || defined(_DEBUG)
+	// -----------------
 	// Do we want a console window?  Probably only in debug mode
 	CreateConsoleWindow(500, 120, 32, 120);
 	printf("Console window created successfully.  Feel free to printf() here.\n");
@@ -48,19 +64,13 @@ Game::~Game()
 	// accompany each mesh with a delete call.
 
 	// Clear each of the entity vectors.
-	for (int i = 0; i < entityCount; i++) {
-		delete entities_a[i];
-		delete entities_b[i];
-		delete entities_c[i];
-	}
+	// for (int i = 0; i < entityCount; i++) {
+	//	delete entities[i];
+	// }
 
 	// Clear the vector and then swap it to deallocate its memory.
-	entities_a.clear();
-	entities_b.clear();
-	entities_c.clear();
-	std::vector<GameEntity*>().swap(entities_a);
-	std::vector<GameEntity*>().swap(entities_b);
-	std::vector<GameEntity*>().swap(entities_c);
+	entities.clear();
+	std::vector<std::shared_ptr<GameEntity>>().swap(entities);
 
 	// Clear will not delete them if the contained
 	// items are pointers.
@@ -198,9 +208,9 @@ void Game::CreateBasicGeometry()
 		// 1: (3, -2, 0)
 		// 2: (0, 3, 0)
 		{
-			Vertex({ XMFLOAT3(-3.0f, -2.0f, +10.0f), white }),
-			Vertex({ XMFLOAT3(+3.0f, -2.0f, +10.0f), silver }),
-			Vertex({ XMFLOAT3(+0.0f, +3.0f, +10.0f), green }),
+			Vertex({ XMFLOAT3(-3.0f, -2.0f, +0.0f), white }),
+			Vertex({ XMFLOAT3(+3.0f, -2.0f, +0.0f), silver }),
+			Vertex({ XMFLOAT3(+0.0f, +3.0f, +0.0f), green }),
 		},
 
 		// Hexagon
@@ -211,12 +221,12 @@ void Game::CreateBasicGeometry()
 		// 4: (-2, -5, 0)
 		// 5: (-6, 0, 0)
 		{
-			Vertex({ XMFLOAT3(-2.5f, +5.0f, +15.0f), red }),
-			Vertex({ XMFLOAT3(+2.5f, +5.0f, +15.0f), maroon }),
-			Vertex({ XMFLOAT3(+6.0f, +0.0f, +15.0f), fuchsia }),
-			Vertex({ XMFLOAT3(+2.5f, -5.0f, +15.0f), green }),
-			Vertex({ XMFLOAT3(-2.5f, -5.0f, +15.0f), aqua }),
-			Vertex({ XMFLOAT3(-6.0f, +0.0f, +15.0f), olive }),
+			Vertex({ XMFLOAT3(-2.5f, +5.0f, +0.0f), red }),
+			Vertex({ XMFLOAT3(+2.5f, +5.0f, +0.0f), maroon }),
+			Vertex({ XMFLOAT3(+6.0f, +0.0f, +0.0f), fuchsia }),
+			Vertex({ XMFLOAT3(+2.5f, -5.0f, +0.0f), green }),
+			Vertex({ XMFLOAT3(-2.5f, -5.0f, +0.0f), aqua }),
+			Vertex({ XMFLOAT3(-6.0f, +0.0f, +0.0f), olive }),
 		},
 
 		// Square
@@ -225,10 +235,10 @@ void Game::CreateBasicGeometry()
 		// 2: (2, -2, 0)
 		// 3: (-2, -2, 0)
 		{
-			Vertex({ XMFLOAT3(-2.0f, +2.0f, +13.0f), aqua }),
-			Vertex({ XMFLOAT3(+2.0f, +2.0f, +13.0f), silver }),
-			Vertex({ XMFLOAT3(+2.0f, -2.0f, +13.0f), fuchsia }),
-			Vertex({ XMFLOAT3(-2.0f, -2.0f, +13.0f), blue }),
+			Vertex({ XMFLOAT3(-2.0f, +2.0f, +0.0f), aqua }),
+			Vertex({ XMFLOAT3(+2.0f, +2.0f, +0.0f), silver }),
+			Vertex({ XMFLOAT3(+2.0f, -2.0f, +0.0f), fuchsia }),
+			Vertex({ XMFLOAT3(-2.0f, -2.0f, +0.0f), blue }),
 		},
 
 		/*
@@ -271,7 +281,7 @@ void Game::CreateBasicGeometry()
 	// Convert vectors back into pointer array (so we don't have to rewrite the Mesh class).
 	// Notes on doing this found here: https://stackoverflow.com/questions/2923272/how-to-convert-vector-to-array
 	// Spec says that vectors are guaranteed to be contiguous in memory; so we can get the address to the first element.
-	for (int i = 0; i < meshCount; i++) {
+	for (size_t i = 0; i < (size_t)meshCount; i++) {
 		Vertex* v = vertices[i].data();
 		unsigned int* w = indices[i].data();
 		meshObjects.push_back(std::make_shared<Mesh>(
@@ -286,22 +296,15 @@ void Game::CreateBasicGeometry()
 void Game::CreateEntities() {
 
 	// Set up the vector for the game objects.
-	entities_a = std::vector<GameEntity*>();
-	entities_b = std::vector<GameEntity*>();
-	entities_c = std::vector<GameEntity*>();
+	entities = std::vector<std::shared_ptr<GameEntity>>();
 
 	// For each mesh type, create a new entity for that given type.
 	// Now, we can create the set of entities in parallel.
-	for (int j = 0; j < entityCount; j++) {
-		entities_a.push_back(new GameEntity(meshObjects[0]));
-	}
+	for (size_t j = 0; j < (size_t)entityCount; j++) {
 
-	for (int j = 0; j < entityCount; j++) {
-		entities_b.push_back(new GameEntity(meshObjects[1]));
-	}
-
-	for (int j = 0; j < entityCount; j++) {
-		entities_c.push_back(new GameEntity(meshObjects[2]));
+		// Select mesh type randomly, 0 to (meshCount - 1).
+		int meshType = static_cast <unsigned int> (rand()) / (static_cast <int> (RAND_MAX / meshCount));
+		entities.push_back(std::make_shared<GameEntity>(meshObjects[meshType]));
 	}
 }
 
@@ -332,6 +335,12 @@ void Game::Update(float deltaTime, float totalTime)
 	if (GetAsyncKeyState('W') & 0x8000) { printf("W key is down."); }
 	if (GetAsyncKeyState('S') & 0x8000) { printf("S key is down."); }
 	if (GetAsyncKeyState(VK_ESCAPE)) { Quit(); }
+
+	// Update each of the entities.
+	for (size_t i = 0; i < (size_t)entityCount; i++) {
+		// entities[i]->SetPositionSpeed(XMFLOAT3(0.0f, 0.0f, 0.0f));
+		entities[i]->Update(deltaTime, totalTime);
+	}
 }
 
 // --------------------------------------------------------
@@ -352,52 +361,28 @@ void Game::Draw(float deltaTime, float totalTime)
 		1.0f,
 		0);
 
-	// Creates a collection of collections on the stack.
-	std::vector<std::vector<GameEntity*>> entityTypes;
-
-	// Adds the collections.
-	entityTypes.push_back(entities_a);
-	entityTypes.push_back(entities_b);
-	entityTypes.push_back(entities_c);
-
-	// Send data to shader variables
-	//  - Do this ONCE PER OBJECT you're drawing
-	//  - This is actually a complex process of copying data to a local buffer
-	//    and then copying that entire buffer to the GPU.
-	//  - The "SimpleShader" class handles all of that for you.
-	// vertexShader->SetMatrix4x4("world", worldMatrix);
-	// vertexShader->SetMatrix4x4("view", viewMatrix);
-	// vertexShader->SetMatrix4x4("projection", projectionMatrix);
-
-	// Once you've set all of the data you care to change for
-	// the next draw call, you need to actually send it to the GPU
-	//  - If you skip this, the "SetMatrix" calls above won't make it to the GPU!
-	// vertexShader->CopyAllBufferData();
-
 	// For each object
 	// - send data to shader variables.
 	// - copy all buffer data.
-	for (int i = 0; i < meshCount; i++) {
-		for (int j = 0; j < entityCount; j++) {
+	for (size_t i = 0; i < (size_t)entityCount; i++) {
 
-			// Load values.
-			XMFLOAT4X4 wMatrix;		entityTypes[i][j]->LoadWorldMatrix(wMatrix);
-			XMFLOAT3 pos;			entityTypes[i][j]->LoadPosition(pos);
-			XMFLOAT3 scale;			entityTypes[i][j]->LoadScale(scale);
-			XMFLOAT4 rot;			entityTypes[i][j]->LoadRotation(rot);
+		// Load values.
+		XMFLOAT4X4 wMatrix;		entities[i]->LoadWorldMatrix(wMatrix);
+		XMFLOAT3 pos;			entities[i]->LoadPosition(pos);
+		XMFLOAT3 scale;			entities[i]->LoadScale(scale);
+		XMFLOAT4 rot;			entities[i]->LoadRotation(rot);
 
-			// Set the vertex shader.
-			vertexShader->SetMatrix4x4("world", wMatrix);
-			vertexShader->SetMatrix4x4("view", viewMatrix);
-			vertexShader->SetMatrix4x4("projection", projectionMatrix);
+		// Set the vertex shader.
+		vertexShader->SetMatrix4x4("world", wMatrix);
 
-			// Send buffer data to the vertex shader.
-			vertexShader->CopyAllBufferData();
-		}
+		// Send buffer data to the vertex shader.
+		vertexShader->CopyAllBufferData();
 	}
 
 	// For each frame.
 	// - Set shaders.
+	vertexShader->SetMatrix4x4("view", viewMatrix);
+	vertexShader->SetMatrix4x4("projection", projectionMatrix);
 
 	// Set the vertex and pixel shaders to use for the next Draw() command
 	//  - These don't technically need to be set every frame...YET
@@ -407,63 +392,31 @@ void Game::Draw(float deltaTime, float totalTime)
 	pixelShader->SetShader();
 
 	// Loop through the entities.
-	for (size_t i = 0; i < (size_t)meshCount; i++) {
-		for (size_t j = 0; j < (size_t)entityCount; j++) {
+	for (size_t i = 0; i < (size_t)entityCount; i++) {
 
-			std::shared_ptr<Mesh> bufferMesh = entityTypes[i][j]->GetMeshReference();
-			// Mesh const * bufferMesh = entityTypes[i][j]->GetMeshReference();
-
-			// Collect the buffers from the meshes.
-			ID3D11Buffer* buffers[2] = {
-				bufferMesh->GetVertexBuffer(),
-				bufferMesh->GetIndexBuffer()
-			};
-
-			UINT stride = sizeof(Vertex); // Question for Professor: Where would stride and offset be tied to? Is it input alongside the Vertex data?
-			UINT offset = 0;
-			context->IASetVertexBuffers(0, 1, &buffers[0], &stride, &offset);
-			context->IASetIndexBuffer(buffers[1], DXGI_FORMAT_R32_UINT, 0);
-
-			context->DrawIndexed(
-				bufferMesh->GetIndexCount(),     // The number of indices to use (we could draw a subset if we wanted)
-				0,     // Offset to the first index we want to use
-				0	   // Offset to add to each index when looking up vertices
-			);
-
-			// Send buffer data to the vertex shader.
-			vertexShader->CopyAllBufferData();
-		}
-	}
-
-	// for (int i = 0; i < meshCount; i++) {
+		// Get reference to the bufferMesh.
+		std::shared_ptr<Mesh> bufferMesh = entities[i]->GetMeshReference();
 
 		// Collect the buffers from the meshes.
-		// Mesh* mesh = meshObjects[i];
+		ID3D11Buffer* buffers[2] = {
+			bufferMesh->GetVertexBuffer(),
+			bufferMesh->GetIndexBuffer()
+		};
 
-		// ID3D11Buffer* buffers[2] = {
-		// 	mesh->GetVertexBuffer(),
-		//	mesh->GetIndexBuffer()
-		// };
+		UINT stride = sizeof(Vertex); // Question for Professor: Where would stride and offset be tied to? Is it input alongside the Vertex data?
+		UINT offset = 0;
+		context->IASetVertexBuffers(0, 1, &buffers[0], &stride, &offset);
+		context->IASetIndexBuffer(buffers[1], DXGI_FORMAT_R32_UINT, 0);
 
-		// Set buffers in the input assembler
-		//  - Do this ONCE PER OBJECT you're drawing, since each object might
-		//    have different geometry.
-		// UINT stride = sizeof(Vertex); // Question for Professor: Where would stride and offset be tied to? Is it input alongside the Vertex data?
-		// UINT offset = 0;
-		// context->IASetVertexBuffers(0, 1, &buffers[0], &stride, &offset);
-		// context->IASetIndexBuffer(buffers[1], DXGI_FORMAT_R32_UINT, 0);
+		context->DrawIndexed(
+			bufferMesh->GetIndexCount(),     // The number of indices to use (we could draw a subset if we wanted)
+			0,     // Offset to the first index we want to use
+			0	   // Offset to add to each index when looking up vertices
+		);
 
-		// Finally do the actual drawing
-		//  - Do this ONCE PER OBJECT you intend to draw
-		//  - This will use all of the currently set DirectX "stuff" (shaders, buffers, etc)
-		//  - DrawIndexed() uses the currently set INDEX BUFFER to look up corresponding
-		//     vertices in the currently set VERTEX BUFFER
-		// context->DrawIndexed(
-		//	mesh->GetIndexCount(),     // The number of indices to use (we could draw a subset if we wanted)
-		//	0,     // Offset to the first index we want to use
-		//	0	   // Offset to add to each index when looking up vertices
-		// );
-
+		// Send buffer data to the vertex shader.
+		// vertexShader->CopyAllBufferData();
+	}
 
 	// End of object loops.
 

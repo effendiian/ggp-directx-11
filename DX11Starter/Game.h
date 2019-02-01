@@ -42,9 +42,7 @@ private:
 
 	// Entities.
 	int entityCount;
-	std::vector<GameEntity*> entities_a;
-	std::vector<GameEntity*> entities_b;
-	std::vector<GameEntity*> entities_c;
+	std::vector<std::shared_ptr<GameEntity>> entities;
 
 	// Wrappers for DirectX shaders to provide simplified functionality
 	SimpleVertexShader* vertexShader;

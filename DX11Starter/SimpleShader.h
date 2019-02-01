@@ -21,6 +21,9 @@ struct SimpleShaderVariable
 	unsigned int ConstantBufferIndex;
 };
 
+#pragma warning( push )
+#pragma warning( disable : 26495 )
+
 // --------------------------------------------------------
 // Contains information about a specific
 // constant buffer in a shader, as well as
@@ -30,12 +33,14 @@ struct SimpleConstantBuffer
 {
 	std::string Name;
 	D3D_CBUFFER_TYPE Type;
-	unsigned int Size;
-	unsigned int BindIndex;
+	unsigned int Size = 0;
+	unsigned int BindIndex = 0;
 	ID3D11Buffer* ConstantBuffer;
 	unsigned char* LocalDataBuffer;
 	std::vector<SimpleShaderVariable> Variables;
 };
+
+#pragma warning( pop )
 
 // --------------------------------------------------------
 // Contains info about a single SRV in a shader
@@ -97,11 +102,11 @@ public:
 
 	// Getting data about variables and resources
 	const SimpleShaderVariable* GetVariableInfo(std::string name);
-	
+
 	const SimpleSRV* GetShaderResourceViewInfo(std::string name);
 	const SimpleSRV* GetShaderResourceViewInfo(unsigned int index);
 	size_t GetShaderResourceViewCount() { return textureTable.size(); }
-	
+
 	const SimpleSampler* GetSamplerInfo(std::string name);
 	const SimpleSampler* GetSamplerInfo(unsigned int index);
 	size_t GetSamplerCount() { return samplerTable.size(); }
@@ -111,20 +116,20 @@ public:
 	unsigned int GetBufferSize(unsigned int index);
 	const SimpleConstantBuffer* GetBufferInfo(std::string name);
 	const SimpleConstantBuffer* GetBufferInfo(unsigned int index);
-	
+
 	// Misc getters
 	ID3DBlob* GetShaderBlob() { return shaderBlob; }
 
 protected:
-	
-	bool shaderValid;
+
+	bool shaderValid = false;
 	ID3DBlob* shaderBlob;
 	ID3D11Device* device;
 	ID3D11DeviceContext* deviceContext;
 
 	// Resource counts
-	unsigned int constantBufferCount;
-	
+	unsigned int constantBufferCount = 0;
+
 	// Maps for variables and buffers
 	SimpleConstantBuffer*		constantBuffers; // For index-based lookup
 	std::vector<SimpleSRV*>		shaderResourceViews;
@@ -290,10 +295,10 @@ protected:
 	ID3D11ComputeShader* shader;
 	std::unordered_map<std::string, unsigned int> uavTable;
 
-	unsigned int threadsX;
-	unsigned int threadsY;
-	unsigned int threadsZ;
-	unsigned int threadsTotal;
+	unsigned int threadsX = 0;
+	unsigned int threadsY = 0;
+	unsigned int threadsZ = 0;
+	unsigned int threadsTotal = 0;
 
 	bool CreateShader(ID3DBlob* shaderBlob);
 	void SetShaderAndCBs();

@@ -26,7 +26,7 @@ public:
 		UINT uMsg,		// Message
 		WPARAM wParam,	// Message's first parameter
 		LPARAM lParam	// Message's second parameter
-		);
+	);
 
 	// Internal method for message handling
 	LRESULT ProcessMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -34,32 +34,32 @@ public:
 	// Initialization and game-loop related methods
 	HRESULT InitWindow();
 	HRESULT InitDirectX();
-	HRESULT Run();				
+	HRESULT Run();
 	void Quit();
 	virtual void OnResize();
-	
+
 	// Pure virtual methods for setup and game functionality
-	virtual void Init()										= 0;
-	virtual void Update(float deltaTime, float totalTime)	= 0;
-	virtual void Draw(float deltaTime, float totalTime)		= 0;
+	virtual void Init() = 0;
+	virtual void Update(float deltaTime, float totalTime) = 0;
+	virtual void Draw(float deltaTime, float totalTime) = 0;
 
 	// Convenience methods for handling mouse input, since we
 	// can easily grab mouse input from OS-level messages
-	virtual void OnMouseDown (WPARAM buttonState, int x, int y) { }
-	virtual void OnMouseUp	 (WPARAM buttonState, int x, int y) { }
-	virtual void OnMouseMove (WPARAM buttonState, int x, int y) { }
-	virtual void OnMouseWheel(float wheelDelta,   int x, int y) { }
-	
+	virtual void OnMouseDown(WPARAM buttonState, int x, int y) { }
+	virtual void OnMouseUp(WPARAM buttonState, int x, int y) { }
+	virtual void OnMouseMove(WPARAM buttonState, int x, int y) { }
+	virtual void OnMouseWheel(float wheelDelta, int x, int y) { }
+
 protected:
 	HINSTANCE	hInstance;		// The handle to the application
 	HWND		hWnd;			// The handle to the window itself
 	std::string titleBarText;	// Custom text in window's title bar
 	bool		titleBarStats;	// Show extra stats in title bar?
-	
+
 	// Size of the window's client area
 	unsigned int width;
 	unsigned int height;
-	
+
 	// DirectX related objects and variables
 	D3D_FEATURE_LEVEL		dxFeatureLevel;
 	IDXGISwapChain*			swapChain;
@@ -84,7 +84,7 @@ private:
 	// FPS calculation
 	int fpsFrameCount;
 	float fpsTimeElapsed;
-	
+
 	void UpdateTimer();			// Updates the timer for this frame
 	void UpdateTitleBarStats();	// Puts debug info in the title bar
 };
