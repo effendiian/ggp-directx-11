@@ -395,7 +395,7 @@ void Game::Draw(float deltaTime, float totalTime)
 	for (size_t i = 0; i < (size_t)entityCount; i++) {
 
 		// Get reference to the bufferMesh.
-		std::shared_ptr<Mesh> bufferMesh = entities[i]->GetMeshReference();
+		std::shared_ptr<Mesh> bufferMesh = entities[i]->GetMesh();
 
 		// Collect the buffers from the meshes.
 		ID3D11Buffer* buffers[2] = {

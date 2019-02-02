@@ -35,7 +35,7 @@
     <ClCompile Include="Transform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="TransformQueue.cpp">
+    <ClCompile Include="TransformBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -61,7 +61,7 @@
     <ClInclude Include="Transform.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="TransformQueue.h">
+    <ClInclude Include="TransformBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
