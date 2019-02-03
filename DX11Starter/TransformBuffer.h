@@ -5,6 +5,7 @@
 // -----------------------------------------------
 #include <memory>
 #include <queue>
+#include <tuple>
 #include <DirectXMath.h>
 #include "Transform.h"
 
@@ -29,14 +30,36 @@ public:
 	} TRANSFORM_TYPE;
 
 	/// <summary>
-	/// Wrapper for a pair between a Transform type and an XMFLOAT4 type.
+	/// TRANSFORM_SCOPE determines if the transformation type
+	/// should be applied absolutely or relative to the
+	/// previous transformations.
 	/// </summary>
-	typedef std::pair<TRANSFORM_TYPE, DirectX::XMFLOAT4> TransformPair;
+	typedef enum _TRANFORM_SCOPE
+	{
+		S_IGNORE = 0,
+		S_ABSOLUTE = 1, // Command will overwrite the last transformation.
+		S_RELATIVE = 2  // Command will apply to existing transformation.
+	} TRANSFORM_SCOPE;
+
+	/// <summary>
+	/// Wrapper for TRANSFORM_TYPE enum.
+	/// </summary>
+	typedef TRANSFORM_TYPE TransformType;
+
+	/// <summary>
+	/// Wrapper for TRANSFORM_SCOPE enum.
+	/// </summary>
+	typedef TRANSFORM_SCOPE TransformScope;
+
+	/// <summary>
+	/// Wrapper for TransformType, TransformScope, and an XMFLOAT4 type.
+	/// </summary>
+	typedef std::tuple<TransformType, DirectX::XMFLOAT4, TransformScope> TransformItem;
 
 	/// <summary>
 	/// Wrapper for a queue of transformations.
 	/// </summary>
-	typedef std::queue<TransformPair> TransformQueue;
+	typedef std::queue<TransformItem> TransformQueue;
 
 	// -----------------------------------------------
 	// Constructors.
@@ -49,13 +72,27 @@ public:
 	// Static methods.
 	// -----------------------------------------------
 
+	// Check transformation data.
+	static const DirectX::XMFLOAT4 get_data(const TransformItem& item);
+	static bool IsZeroVector(const TransformItem& item);
+	static bool IsNonZeroVector(const TransformItem& item);
+
+	// Check if a transformation is of a particular scope.
+	static const TransformScope get_scope(const TransformItem& item);
+	static bool IsMatchingTransformScope(const TransformScope a, const TransformScope b);
+	static bool IsOfTransformScope(TransformScope a, const TransformItem& transformation);
+	static bool IsIgnored(const TransformItem& transformation);
+	static bool IsAbsolute(const TransformItem& transformation);
+	static bool IsRelative(const TransformItem& transformation);
+
 	// Check if a transformation is of a particular type.
-	static bool TransformBuffer::IsMatchingTransformType(TRANSFORM_TYPE a, TRANSFORM_TYPE b);
-	static bool IsOfTransformType(TRANSFORM_TYPE type, const TransformPair& transformation);
-	static bool IsNull(const TransformPair& transformation);
-	static bool IsPosition(const TransformPair& transformation);
-	static bool IsScale(const TransformPair& transformation);
-	static bool IsRotation(const TransformPair& transformation);
+	static const TransformType get_type(const TransformItem& item);
+	static bool IsMatchingTransformType(const TransformType a, const TransformType b);
+	static bool IsOfTransformType(TransformType type, const TransformItem& transformation);
+	static bool IsNull(const TransformItem& transformation);
+	static bool IsPosition(const TransformItem& transformation);
+	static bool IsScale(const TransformItem& transformation);
+	static bool IsRotation(const TransformItem& transformation);
 
 	// Convert float vector values.
 	static void ConvertTransformation(DirectX::XMFLOAT3& target, const DirectX::XMFLOAT4& source);
@@ -66,11 +103,19 @@ public:
 	// -----------------------------------------------
 
 	// ------------
+	// TRANSFORM TYPE
+	const TransformType next_type() const;
+
+	// ------------
+	// TRANSFORM SCOPE
+	const TransformScope next_scope() const;
+
+	// ------------
 	// TRANSFORMPAIR
-	const TransformPair peek_pair() const;
+	const TransformItem& peek_item() const;
 	const DirectX::XMFLOAT4 peek_float4() const;
 	const DirectX::XMFLOAT3 peek_float3() const;
-	void peek(TransformPair& target) const;
+	void peek(TransformItem& target) const;
 	void peek(DirectX::XMFLOAT4& target) const;
 	void peek(DirectX::XMFLOAT3& target) const;
 
@@ -79,31 +124,39 @@ public:
 	// -----------------------------------------------
 
 	// ------------
+	// TRANSFORM TYPE
+	void change_item_type(const TransformType type);
+
+	// ------------
+	// TRANSFORM SCOPE
+	void change_item_scope(const TransformScope scope);
+
+	// ------------
 	// TRANSFORMPAIR
 	void pop();
 
 	// ------------
 	// POSITION
-	void push_position(const DirectX::XMFLOAT4& source);
-	void push_position(const DirectX::XMFLOAT3& source);
-	void push_position(const TRANSFORM& source);
-	void push_position(float x, float y, float z);
-	void push_position(_In_reads_(3) const float *data);
+	void push_position(const DirectX::XMFLOAT4& source, TransformScope scope = S_ABSOLUTE);
+	void push_position(const DirectX::XMFLOAT3& source, TransformScope scope = S_ABSOLUTE);
+	void push_position(const TRANSFORM& source, TransformScope scope = S_ABSOLUTE);
+	void push_position(float x, float y, float z, TransformScope scope = S_ABSOLUTE);
+	void push_position(_In_reads_(3) const float *data, TransformScope scope = S_ABSOLUTE);
 
 	// ------------
 	// SCALE
-	void push_scale(const DirectX::XMFLOAT4& source);
-	void push_scale(const DirectX::XMFLOAT3& source);
-	void push_scale(const TRANSFORM& source);
-	void push_scale(float x, float y, float z);
-	void push_scale(_In_reads_(3) const float *data);
+	void push_scale(const DirectX::XMFLOAT4& source, TransformScope scope = S_ABSOLUTE);
+	void push_scale(const DirectX::XMFLOAT3& source, TransformScope scope = S_ABSOLUTE);
+	void push_scale(const TRANSFORM& source, TransformScope scope = S_ABSOLUTE);
+	void push_scale(float x, float y, float z, TransformScope scope = S_ABSOLUTE);
+	void push_scale(_In_reads_(3) const float *data, TransformScope scope = S_ABSOLUTE);
 
 	// ------------
 	// ROTATION
-	void push_rotation(const DirectX::XMFLOAT4& source);
-	void push_rotation(const TRANSFORM& source);
-	void push_rotation(float x, float y, float z, float w);
-	void push_rotation(_In_reads_(4) const float *data);
+	void push_rotation(const DirectX::XMFLOAT4& source, TransformScope scope = S_ABSOLUTE);
+	void push_rotation(const TRANSFORM& source, TransformScope scope = S_ABSOLUTE);
+	void push_rotation(float x, float y, float z, float w, TransformScope scope = S_ABSOLUTE);
+	void push_rotation(_In_reads_(4) const float *data, TransformScope scope = S_ABSOLUTE);
 
 
 	// -----------------------------------------------
@@ -144,35 +197,40 @@ private:
 	bool is_empty(const TransformQueue& queue) const;
 
 	// PEEK
-	const TransformPair peek(const TransformQueue& queue) const;
-	void peek(TransformPair& target, const TransformQueue& queue) const;
+	const TransformItem& peek(const TransformQueue& queue) const;
+	void peek(TransformItem& target, const TransformQueue& queue) const;
 
 	// POP
 	void pop(TransformQueue& queue);
 
 	// PUSH
-	void push(TransformQueue& queue, TransformPair& pair);
-	void push(TransformQueue& queue, TRANSFORM_TYPE type, const DirectX::XMFLOAT4& data);
-	void push(TransformQueue& queue, TRANSFORM_TYPE type, const DirectX::XMFLOAT3& data);
-	void push(TRANSFORM_TYPE type, const DirectX::XMFLOAT4& data);
-	void push(TRANSFORM_TYPE type, const DirectX::XMFLOAT3& data);
-	void push(TRANSFORM_TYPE type, float x, float y, float z);
-	void push(TRANSFORM_TYPE type, float x, float y, float z, float w);
-	void push(TRANSFORM_TYPE type, _In_reads_(4) const float *data);
+	void push(TransformQueue& queue, TransformItem& item);
+	void push(TransformQueue& queue, TransformType type, const DirectX::XMFLOAT4& data, TransformScope scope = S_ABSOLUTE);
+	void push(TransformQueue& queue, TransformType type, const DirectX::XMFLOAT3& data, TransformScope scope = S_ABSOLUTE);
+	void push(TransformType type, const DirectX::XMFLOAT4& data, TransformScope scope = S_ABSOLUTE);
+	void push(TransformType type, const DirectX::XMFLOAT3& data, TransformScope scope = S_ABSOLUTE);
+	void push(TransformType type, float x, float y, float z, TransformScope scope = S_ABSOLUTE);
+	void push(TransformType type, float x, float y, float z, float w, TransformScope scope = S_ABSOLUTE);
+	void push(TransformType type, _In_reads_(4) const float *data, TransformScope scope = S_ABSOLUTE);
 
 	// ------------
-	// PAIR BUILDERS
-	void pair_transformation(TransformPair& target, TRANSFORM_TYPE type, const DirectX::XMFLOAT4& transformation);
-	void pair_transformation(TransformPair& target, TRANSFORM_TYPE type, const DirectX::XMFLOAT3& transformation);
-	void pair_position(TransformPair& target, const DirectX::XMFLOAT4 transformation);
-	void pair_position(TransformPair& target, const DirectX::XMFLOAT3 transformation);
-	void pair_scale(TransformPair& target, const DirectX::XMFLOAT4 transformation);
-	void pair_scale(TransformPair& target, const DirectX::XMFLOAT3 transformation);
-	void pair_rotation(TransformPair& target, const DirectX::XMFLOAT4 transformation);
+	// ITEM BUILDERS
+	void item_transformation(TransformItem& target, TransformType type, const DirectX::XMFLOAT4& transformation, TransformScope scope = S_ABSOLUTE);
+	void item_transformation(TransformItem& target, TransformType type, const DirectX::XMFLOAT3& transformation, TransformScope scope = S_ABSOLUTE);
+	void item_position(TransformItem& target, const DirectX::XMFLOAT4 transformation, TransformScope scope = S_ABSOLUTE);
+	void item_position(TransformItem& target, const DirectX::XMFLOAT3 transformation, TransformScope scope = S_ABSOLUTE);
+	void item_scale(TransformItem& target, const DirectX::XMFLOAT4 transformation, TransformScope scope = S_ABSOLUTE);
+	void item_scale(TransformItem& target, const DirectX::XMFLOAT3 transformation, TransformScope scope = S_ABSOLUTE);
+	void item_rotation(TransformItem& target, const DirectX::XMFLOAT4 transformation, TransformScope scope = S_ABSOLUTE);
 
 	// ------------
 	// TRANSFORM TYPE COMPARISONS
-	bool is_type(TRANSFORM_TYPE a, TRANSFORM_TYPE b) const;
-	bool is_type(TRANSFORM_TYPE a, TransformPair& pair) const;
+	bool is_type(TransformType a, TransformType b) const;
+	bool is_type(TransformType a, TransformItem& item) const;
+
+	// ------------
+	// TRANSFORM SCOPE COMPARISONS
+	bool is_scope(TransformScope a, TransformScope b) const;
+	bool is_scope(TransformScope a, TransformItem& item) const;
 };
 

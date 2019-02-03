@@ -36,15 +36,15 @@ This branch contains the work for [Assignment 3: Making Things Move](https://myc
 
 ### Overview ###
 
-[] Create a class that represents individual **game entities** and their transformations.
+[x] Create a class that represents individual **game entities** and their transformations.
 
-[] Ensure that Meshes can be **shared** among multiple entities.
+[x] Ensure that Meshes can be **shared** among multiple entities.
 
-[] **Create** and **draw** at least 5 shared entities, with several sharing the same Mesh object.
+[x] **Create** and **draw** at least 5 shared entities, with several sharing the same Mesh object.
 
-[] **Update** your entity transformations each frame so the entities move/scale/etc.
+[x] **Update** your entity transformations each frame so the entities move/scale/etc.
 
-[] Ensure you have no **warnings**, **memory leaks** or **DX resource leaks**.
+[x] Ensure you have no **warnings**, **memory leaks** or **DX resource leaks**.
 
 ## Binaries Not Included ##
 

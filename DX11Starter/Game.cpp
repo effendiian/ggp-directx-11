@@ -1,6 +1,5 @@
 #include "Game.h"
 #include "Vertex.h"
-#include <ctime>
 #include <cstdlib>
 
 // For the DirectX Math library
@@ -37,17 +36,23 @@ Game::Game(HINSTANCE hInstance)
 
 	// Initialize the meshes.
 	meshCount = 3;
-	entityCount = 9;
+	gameEntityCount = 9;
 
-	// -----------------
-	// Seed the random number generator.
-	srand(static_cast<unsigned> (time(0)));
+	meshObjects = MeshCollection();
+	gameEntities = GameEntityCollection();
 
 #if defined(DEBUG) || defined(_DEBUG)
 	// -----------------
 	// Do we want a console window?  Probably only in debug mode
 	CreateConsoleWindow(500, 120, 32, 120);
-	printf("Console window created successfully.  Feel free to printf() here.\n");
+	printf("| Foundations of Game Graphics Programming: ---------------------------------- |\n");
+	printf("| Console window created successfully.  Feel free to printf() here.            |\n");
+	printf("| ---------------------------------------------------------------------------- |\n");
+	printf("| Controls: ------------------------------------------------------------------ |\n");
+	printf("| ------------ MOVEMENT [ X ('A'/'D') | Y ('W'/'S') | Z ('Q'/'E') ] ---------- |\n");
+	// printf("| ----------------------- SCALE 'F'-key + [ ('A'/'D') ] ---------------------- |\n");
+	printf("| -- ROTATION 'R'-key + [ YAW ('A'/'D') | PITCH ('W'/'S') | ROLL ('Q'/'E') ] - |\n");
+	printf("| ---------------------------------------------------------------------------- |\n");
 #endif
 
 }
@@ -59,29 +64,30 @@ Game::Game(HINSTANCE hInstance)
 // --------------------------------------------------------
 Game::~Game()
 {
-	// When the vector is a collection of pointers,
-	// that are allocated with new, we need to
-	// accompany each mesh with a delete call.
 
-	// Clear each of the entity vectors.
-	// for (int i = 0; i < entityCount; i++) {
-	//	delete entities[i];
-	// }
+	// -----
+	// Clear the collections and swap with empty collection to de-allocate.
 
-	// Clear the vector and then swap it to deallocate its memory.
-	entities.clear();
-	std::vector<std::shared_ptr<GameEntity>>().swap(entities);
+	// Clear up any remaining pointers.
+	for (int i = 0; i < gameEntityCount; i++)
+	{
+		gameEntities[i].reset();
+	}
 
-	// Clear will not delete them if the contained
-	// items are pointers.
-	// for (int i = 0; i < meshCount; i++) {
-	//	meshObjects[i].reset();
-		// delete meshObjects[i]; // Delete each pointer contained in the vector.
-	// }
+	// Clean up game entities.
+	gameEntities.clear();
+	GameEntityCollection().swap(gameEntities);
 
-	// Clear the vector and then swap it to deallocate its memory.
+	// Clear up any remaining pointers.
+	for (int i = 0; i < meshCount; i++)
+	{
+		meshObjects[i].reset();
+	}
+
+	// Clean up the mesh entities.
 	meshObjects.clear();
-	std::vector<std::shared_ptr<Mesh>>().swap(meshObjects);
+	MeshCollection().swap(meshObjects);
+
 
 	// Delete our simple shader objects, which
 	// will clean up their own internal DirectX stuff
@@ -123,8 +129,6 @@ void Game::LoadShaders()
 	pixelShader = new SimplePixelShader(device, context);
 	pixelShader->LoadShaderFile(L"PixelShader.cso");
 }
-
-
 
 // --------------------------------------------------------
 // Initializes the matrices necessary to represent our geometry's
@@ -176,32 +180,32 @@ void Game::CreateBasicGeometry()
 {
 	// Create some temporary variables to represent colors
 	// - Not necessary, just makes things more readable
-	std::vector<XMFLOAT4> colors;
-	colors.push_back(XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)); // red;
-	colors.push_back(XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)); // green;
-	colors.push_back(XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)); // blue;
-	colors.push_back(XMFLOAT4(0.5f, 0.0f, 0.0f, 1.0f)); // maroon;
-	colors.push_back(XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f)); // aqua;
-	colors.push_back(XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)); // silver;
-	colors.push_back(XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f)); // fuchsia;
-	colors.push_back(XMFLOAT4(0.5f, 0.5f, 0.0f, 1.0f)); // olive;
-	colors.push_back(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)); // white;
+	ColorCollection colors;
+	colors.push_back(fColor(1.0f, 0.0f, 0.0f, 1.0f)); // red;
+	colors.push_back(fColor(0.0f, 1.0f, 0.0f, 1.0f)); // green;
+	colors.push_back(fColor(0.0f, 0.0f, 1.0f, 1.0f)); // blue;
+	colors.push_back(fColor(0.5f, 0.0f, 0.0f, 1.0f)); // maroon;
+	colors.push_back(fColor(0.0f, 1.0f, 1.0f, 1.0f)); // aqua;
+	colors.push_back(fColor(0.5f, 0.5f, 0.5f, 1.0f)); // silver;
+	colors.push_back(fColor(1.0f, 0.0f, 1.0f, 1.0f)); // fuchsia;
+	colors.push_back(fColor(0.5f, 0.5f, 0.0f, 1.0f)); // olive;
+	colors.push_back(fColor(1.0f, 1.0f, 1.0f, 1.0f)); // white;
 
 	// Name colors for ease of use.
-	XMFLOAT4 red = colors[0];
-	XMFLOAT4 green = colors[1];
-	XMFLOAT4 blue = colors[2];
-	XMFLOAT4 maroon = colors[3];
-	XMFLOAT4 aqua = colors[4];
-	XMFLOAT4 silver = colors[5];
-	XMFLOAT4 fuchsia = colors[6];
-	XMFLOAT4 olive = colors[7];
-	XMFLOAT4 white = colors[8];
+	fColor red = colors[0];
+	fColor green = colors[1];
+	fColor blue = colors[2];
+	fColor maroon = colors[3];
+	fColor aqua = colors[4];
+	fColor silver = colors[5];
+	fColor fuchsia = colors[6];
+	fColor olive = colors[7];
+	fColor white = colors[8];
 
 	// Set up the vertices of the triangle we would like to draw
 	// - We're going to copy this array, exactly as it exists in memory
 	//    over to a DirectX-controlled data structure (the vertex buffer)
-	std::vector<Vertex> vertices[] = {
+	VertexCollection vertices[] = {
 
 		// Triangle
 		// 0: (-3, -2, 0)
@@ -264,7 +268,7 @@ void Game::CreateBasicGeometry()
 	// - Indices are technically not required if the vertices are in the buffer
 	//    in the correct order and each one will be used exactly once
 	// - But just to see how it's done...
-	std::vector<unsigned int> indices[] = {
+	IndexCollection indices[] = {
 		{ 2, 1, 0,
 		  0, 1, 2 },
 		{ 0, 4, 5, 0, 3, 4, 0, 1, 3, 1, 2, 3,
@@ -273,38 +277,73 @@ void Game::CreateBasicGeometry()
 		  3, 2, 1, 3, 1, 0 },
 	};
 
-	// Set up the vector for the mesh objects.
-	// meshObjects = std::vector<std::unique_ptr<Mesh>>();
-	// meshObjects = std::vector<Mesh*>();
-	meshObjects = std::vector<std::shared_ptr<Mesh>>();
+	// Get the mesh count.
+	meshCount = static_cast<int>(sizeof indices / sizeof indices[0]);
 
-	// Convert vectors back into pointer array (so we don't have to rewrite the Mesh class).
-	// Notes on doing this found here: https://stackoverflow.com/questions/2923272/how-to-convert-vector-to-array
-	// Spec says that vectors are guaranteed to be contiguous in memory; so we can get the address to the first element.
-	for (size_t i = 0; i < (size_t)meshCount; i++) {
-		Vertex* v = vertices[i].data();
-		unsigned int* w = indices[i].data();
+	// Create meshes.
+	for (int i = 0; i < meshCount; i++)
+	{
+		// Convert vectors back into pointer array (so we don't have to rewrite the Mesh class).
+		// Notes on doing this found here: https://stackoverflow.com/questions/2923272/how-to-convert-vector-to-array
+		// Spec says that vectors are guaranteed to be contiguous in memory; so we can get the address to the first element.
+
+		// Get mesh data.
+		Vertex* vertexPointer = vertices[i].data();
+		unsigned int vertexCount = static_cast<unsigned int>(vertices[i].size());
+		unsigned int* indexPointer = indices[i].data();
+		unsigned int indexCount = static_cast<unsigned int>(indices[i].size());
+
+		// Prepare a mesh via mesh pointer.
 		meshObjects.push_back(std::make_shared<Mesh>(
-			v, static_cast<unsigned int>(vertices[i].size()),
-			w, static_cast<unsigned int>(indices[i].size()),
-			device
-			)
+			vertexPointer, vertexCount,
+			indexPointer, indexCount,
+			device)
 		);
 	}
 }
 
 void Game::CreateEntities() {
 
-	// Set up the vector for the game objects.
-	entities = std::vector<std::shared_ptr<GameEntity>>();
+	// Create entity collection.
+	gameEntities = GameEntityCollection();
 
-	// For each mesh type, create a new entity for that given type.
-	// Now, we can create the set of entities in parallel.
-	for (size_t j = 0; j < (size_t)entityCount; j++) {
+	// Cycle through meshes, until entity count is fulfilled.
+	int meshID = -1;
+	for (int i = 0; i < gameEntityCount; i++)
+	{
+		// Check if meshID is out of bounds, and set to zero if so.
+		meshID = (meshID >= meshCount || meshID < 0) ? 0 : meshID;
+		pSharedMesh mesh = meshObjects[meshID]; // Select mesh.
+		meshID++; // Increment mesh ID counter for next loop through.
 
-		// Select mesh type randomly, 0 to (meshCount - 1).
-		int meshType = static_cast <unsigned int> (rand()) / (static_cast <int> (RAND_MAX / meshCount));
-		entities.push_back(std::make_shared<GameEntity>(meshObjects[meshType]));
+		// Randomize starting transformation.
+		// XMFLOAT3 position;
+		// position.x = static_cast<float>(rand() % 5) - static_cast<float>(rand() % 5);
+		// position.y = static_cast<float>(rand() % 5) - static_cast<float>(rand() % 5);
+		// position.z = static_cast<float>(rand() % 5);
+
+
+		// Create the transformations.
+		XMFLOAT3 bounds[] = {
+			XMFLOAT3(-2.5f, -2.0f, 1.0f),
+			XMFLOAT3(2.5f, 2.0f, 15.0f)
+		};
+
+		XMFLOAT3 position = GameEntity::GetRandomTransform(bounds[0], bounds[1]);
+		XMFLOAT3 scale = GameEntity::GetRandomTransform(0.1f, 0.2f);
+
+		// Create an entity with the appropriate mesh.
+		pUniqueGameEntity entity(new GameEntity(mesh,
+			position.x, position.y, position.z,
+			scale.x, scale.y, scale.z)
+		);
+
+		// Print info about the entity.
+		// printf("{| Position [%d]: < %5.3f, %5.3f, %5.3f > | ", i, position.x, position.y, position.z);
+		// printf("Scale [%d]: < %5.3f, %5.3f, %5.3f > | }\n", i, scale.x, scale.y, scale.z);
+
+
+		gameEntities.push_back(std::move(entity));
 	}
 }
 
@@ -332,15 +371,106 @@ void Game::OnResize()
 void Game::Update(float deltaTime, float totalTime)
 {
 	// Quit if the escape key is pressed
-	if (GetAsyncKeyState('W') & 0x8000) { printf("W key is down."); }
-	if (GetAsyncKeyState('S') & 0x8000) { printf("S key is down."); }
 	if (GetAsyncKeyState(VK_ESCAPE)) { Quit(); }
 
-	// Update each of the entities.
-	for (size_t i = 0; i < (size_t)entityCount; i++) {
-		// entities[i]->SetPositionSpeed(XMFLOAT3(0.0f, 0.0f, 0.0f));
-		entities[i]->Update(deltaTime, totalTime);
+	float scaleMagnitude = 2.0f * deltaTime;
+	float magnitude = 5.0f * deltaTime;
+	float x = 0.0f, y = 0.0f, z = 0.0f;
+	float deltaScale = 0.0f;
+	float pitchY = 0.0f, yawX = 0.0f, rollZ = 0.0f;
+
+
+	if (GetAsyncKeyState('R') & 0x8000) {
+		printf("R key is down.\n");
+
+		if (GetAsyncKeyState('E') & 0x8000) {
+			printf("R+E key is down.\n");
+			yawX = magnitude;
+		}
+
+		if (GetAsyncKeyState('Q') & 0x8000) {
+			printf("R+Q key is down.\n");
+			yawX = -magnitude;
+		}
+
+		if (GetAsyncKeyState('W') & 0x8000) {
+			printf("R+W key is down.\n");
+			pitchY = magnitude;
+		}
+
+		if (GetAsyncKeyState('S') & 0x8000) {
+			printf("R+S key is down.\n");
+			pitchY = -magnitude;
+		}
+
+		if (GetAsyncKeyState('A') & 0x8000) {
+			printf("R+A key is down.\n");
+			rollZ = -magnitude;
+		}
+
+		if (GetAsyncKeyState('D') & 0x8000) {
+			printf("R+D key is down.\n");
+			rollZ = magnitude;
+		}
 	}
+	else if (GetAsyncKeyState('F') & 0x8000) {
+		printf("F key is down.\n");
+
+		if (GetAsyncKeyState('A') & 0x8000) {
+			printf("F+A key is down.\n");
+			deltaScale = -scaleMagnitude;
+		}
+
+		if (GetAsyncKeyState('D') & 0x8000) {
+			printf("F+D key is down.\n");
+			deltaScale = scaleMagnitude;
+		}
+	}
+	else
+	{
+		if (GetAsyncKeyState('E') & 0x8000) {
+			printf("E key is down.\n");
+			z = magnitude;
+		}
+
+		if (GetAsyncKeyState('Q') & 0x8000) {
+			printf("Q key is down.\n");
+			z = -magnitude;
+		}
+
+		if (GetAsyncKeyState('W') & 0x8000) {
+			printf("W key is down.\n");
+			y = magnitude;
+		}
+
+		if (GetAsyncKeyState('S') & 0x8000) {
+			printf("S key is down.\n");
+			y = -magnitude;
+		}
+
+		if (GetAsyncKeyState('A') & 0x8000) {
+			printf("A key is down.\n");
+			x = -magnitude;
+		}
+
+		if (GetAsyncKeyState('D') & 0x8000) {
+			printf("D key is down.\n");
+			x = magnitude;
+		}
+	}
+
+
+
+	// Update each of the entities.
+	for (int i = 0; i < gameEntityCount; i++)
+	{
+		gameEntities[i]->Move(x, y, z);
+		gameEntities[i]->Scale(deltaScale, deltaScale, deltaScale);
+		gameEntities[i]->Rotate(pitchY, yawX, rollZ);
+		gameEntities[i]->Update(deltaTime, totalTime);
+		// printf("Entity[%d] Position: < %4.2f, %4.2f > \n", i, gameEntities[i]->GetPosition().x, gameEntities[i]->GetPosition().y);
+	}
+	// printf("\n");
 }
 
 // --------------------------------------------------------
@@ -348,9 +478,11 @@ void Game::Update(float deltaTime, float totalTime)
 // --------------------------------------------------------
 void Game::Draw(float deltaTime, float totalTime)
 {
+	// ----------
 	// Background color (Cornflower Blue in this case) for clearing
 	const float color[4] = { 0.4f, 0.6f, 0.75f, 0.0f };
 
+	// ----------
 	// Clear the render target and depth buffer (erases what's on the screen)
 	//  - Do this ONCE PER FRAME
 	//  - At the beginning of Draw (before drawing *anything*)
@@ -361,41 +493,33 @@ void Game::Draw(float deltaTime, float totalTime)
 		1.0f,
 		0);
 
+	// ----------
 	// For each object
 	// - send data to shader variables.
 	// - copy all buffer data.
-	for (size_t i = 0; i < (size_t)entityCount; i++) {
+	for (int i = 0; i < gameEntityCount; i++)
+	{
+		// Load the values.
+		XMFLOAT4X4 wMat = gameEntities[i]->GetWorldMatrix();
 
-		// Load values.
-		XMFLOAT4X4 wMatrix;		entities[i]->LoadWorldMatrix(wMatrix);
-		XMFLOAT3 pos;			entities[i]->LoadPosition(pos);
-		XMFLOAT3 scale;			entities[i]->LoadScale(scale);
-		XMFLOAT4 rot;			entities[i]->LoadRotation(rot);
-
-		// Set the vertex shader.
-		vertexShader->SetMatrix4x4("world", wMatrix);
+		// For each frame.
+		// - set matrices.
+		vertexShader->SetMatrix4x4("world", wMat);
+		vertexShader->SetMatrix4x4("view", viewMatrix);
+		vertexShader->SetMatrix4x4("projection", projectionMatrix);
 
 		// Send buffer data to the vertex shader.
 		vertexShader->CopyAllBufferData();
-	}
 
-	// For each frame.
-	// - Set shaders.
-	vertexShader->SetMatrix4x4("view", viewMatrix);
-	vertexShader->SetMatrix4x4("projection", projectionMatrix);
-
-	// Set the vertex and pixel shaders to use for the next Draw() command
-	//  - These don't technically need to be set every frame...YET
-	//  - Once you start applying different shaders to different objects,
-	//    you'll need to swap the current shaders before each draw
-	vertexShader->SetShader();
-	pixelShader->SetShader();
-
-	// Loop through the entities.
-	for (size_t i = 0; i < (size_t)entityCount; i++) {
+		// Set the vertex and pixel shaders to use for the next Draw() command
+		//  - These don't technically need to be set every frame...YET
+		//  - Once you start applying different shaders to different objects,
+		//    you'll need to swap the current shaders before each draw
+		vertexShader->SetShader();
+		pixelShader->SetShader();
 
 		// Get reference to the bufferMesh.
-		std::shared_ptr<Mesh> bufferMesh = entities[i]->GetMesh();
+		pSharedMesh bufferMesh = gameEntities[i]->GetMesh();
 
 		// Collect the buffers from the meshes.
 		ID3D11Buffer* buffers[2] = {

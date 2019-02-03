@@ -41,12 +41,6 @@ public:
 	// Pointer to shared mesh.
 	GameEntity(MeshReference& sharedMesh);
 
-	// Copy constructor.
-	GameEntity(GameEntity& other);
-
-	// Copy assignment.
-	GameEntity& operator=(GameEntity other);
-
 	// Initialize game entity with a starting position.
 	GameEntity(MeshReference& sharedMesh, float pX, float pY, float pZ);
 
@@ -79,6 +73,13 @@ public:
 
 	// Create specified number of game entities and append them to an existing std::vector.
 	static void CreateGameEntities(GameEntityCollection& gameEntities, MeshReference& sharedMesh, int count = 1);
+
+	// Return a transformation between a set of bounds.
+	static const float GetRandomFloat(); // Get random value between 0 to RAND_MAX.
+	static const float GetRandomFloat(float min, float max); // Get random value between min and max.
+	static const DirectX::XMFLOAT3 GetRandomTransform(); // 0 to RAND_MAX.
+	static const DirectX::XMFLOAT3 GetRandomTransform(float min, float max); // [Inclusive min, Exclusive max)
+	static const DirectX::XMFLOAT3 GetRandomTransform(DirectX::XMFLOAT3 min, DirectX::XMFLOAT3 max); // [Inclusive min, Exclusive max)
 
 	// -----------------------------------------------
 	// Accessors.
@@ -128,9 +129,9 @@ public:
 	// ----------
 	// UPDATE
 	void Update(float deltaTime, float totalTime);
-	void UpdatePosition(const DirectX::XMFLOAT3 request);
-	void UpdateScale(const DirectX::XMFLOAT3 request);
-	void UpdateRotation(const DirectX::XMFLOAT4 request);
+	void UpdatePosition(const DirectX::XMFLOAT3 request, TransformBuffer::TransformScope scope = TransformBuffer::S_RELATIVE);
+	void UpdateScale(const DirectX::XMFLOAT3 request, TransformBuffer::TransformScope scope = TransformBuffer::S_RELATIVE);
+	void UpdateRotation(const DirectX::XMFLOAT4 request, TransformBuffer::TransformScope scope = TransformBuffer::S_RELATIVE);
 
 	// ----------
 	// RELATIVE TRANSFORMATION
@@ -153,9 +154,9 @@ protected:
 	// ----------
 	// Handle enqueued transformations.
 	virtual void HandleTransformations();
-	virtual void HandlePosition(const DirectX::XMFLOAT3& transformation);
-	virtual void HandleScale(const DirectX::XMFLOAT3& transformation);
-	virtual void HandleRotation(const DirectX::XMFLOAT4& transformation);
+	virtual void HandlePosition(const DirectX::XMFLOAT3& transformation, TransformBuffer::TransformScope scope = TransformBuffer::S_ABSOLUTE);
+	virtual void HandleScale(const DirectX::XMFLOAT3& transformation, TransformBuffer::TransformScope scope = TransformBuffer::S_ABSOLUTE);
+	virtual void HandleRotation(const DirectX::XMFLOAT4& transformation, TransformBuffer::TransformScope scope = TransformBuffer::S_ABSOLUTE);
 
 private:
 

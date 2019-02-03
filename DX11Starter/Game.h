@@ -6,10 +6,24 @@
 #include "SimpleShader.h"
 #include <DirectXMath.h>
 #include <vector>
+#include "Vertex.h"
 
 class Game
 	: public DXCore
 {
+
+	// data.
+	typedef DirectX::XMFLOAT4 fColor;
+	typedef GameEntity::MeshReference pSharedMesh;
+	typedef GameEntity::GameEntityReference pUniqueGameEntity;
+
+	// collections
+	typedef std::vector<unsigned int> IndexCollection;
+	typedef std::vector<Vertex> VertexCollection;
+	typedef std::vector<DirectX::XMFLOAT4> ColorCollection;
+	typedef std::vector<GameEntity::MeshReference> MeshCollection;
+	typedef GameEntity::GameEntityCollection GameEntityCollection;
+
 
 public:
 	Game(HINSTANCE hInstance);
@@ -37,12 +51,11 @@ private:
 
 	// Buffers to hold actual geometry data
 	int meshCount;
-	// std::vector<Mesh*> meshObjects;
-	std::vector<std::shared_ptr<Mesh>> meshObjects;
+	MeshCollection meshObjects; // Alias to std::vector<std::shared_ptr<Mesh>>.
 
 	// Entities.
-	int entityCount;
-	std::vector<std::shared_ptr<GameEntity>> entities;
+	int gameEntityCount;
+	GameEntityCollection gameEntities;  // Alias to std::vector<std::unique_ptr<GameEntity>>.
 
 	// Wrappers for DirectX shaders to provide simplified functionality
 	SimpleVertexShader* vertexShader;

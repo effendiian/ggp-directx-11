@@ -32,7 +32,114 @@ TransformBuffer::TransformBuffer()
 // -----------------------------------------------
 
 // ------------
+// Check transformation data.
+
+/// <summary>
+/// Retrieve the data within a given TransformItem.
+/// </summary>
+/// <param name="item">Item to check.</param>
+/// <returns>Returns item data.</returns>
+const XMFLOAT4 TransformBuffer::get_data(const TransformItem& item)
+{
+	return std::get<XMFLOAT4>(item);
+}
+
+/// <summary>
+/// Check if the data is zero.
+/// </summary>
+/// <param name="item">Item to check.</param>
+/// <returns>Returns comparison result.</returns>
+bool TransformBuffer::IsZeroVector(const TransformItem& item)
+{
+	const XMFLOAT4 data = get_data(item);
+	float magnitude = (data.x + data.y + data.z + data.w);
+	return (magnitude == 0.0f);
+}
+
+/// <summary>
+/// Check if the data is non-zero.
+/// </summary>
+/// <param name="item">Item to check.</param>
+/// <returns>Returns comparison result.</returns>
+bool TransformBuffer::IsNonZeroVector(const TransformItem& item)
+{
+	return !(IsZeroVector(item));
+}
+
+// ------------
+// Check if a transformation is of a particular scope.
+
+/// <summary>
+/// Retrieve the scope within a given TransformItem.
+/// </summary>
+/// <returns>Returns item scope.</returns>
+const TransformBuffer::TransformScope TransformBuffer::get_scope(const TransformItem& item)
+{
+	return std::get<TransformScope>(item);
+}
+
+/// <summary>
+/// Compare two transformation scopes.
+/// </summary>
+/// <param name="a">First scope.</param>
+/// <param name="b">Second scope.</param>
+/// <returns>Returns true if matched, false otherwise.</returns>
+bool TransformBuffer::IsMatchingTransformScope(const TransformScope a, const TransformScope b) {
+	return (a == b);
+}
+
+/// <summary>
+/// Check if a transformation is of a particular scope.
+/// </summary>
+/// <param name="scope">Scope to check against.</param>
+/// <param name="transformation">Transformation group to check.</param>
+/// <returns>Returns true if the item matches the expected scope.</returns>
+bool TransformBuffer::IsOfTransformScope(TransformScope scope, const TransformItem& transformation)
+{
+	return IsMatchingTransformScope(scope, get_scope(transformation));
+}
+
+/// <summary>
+/// Check if a transformation is of a particular scope.
+/// </summary>
+/// <param name="transformation">Transformation item to check.</param>
+/// <returns>Returns true if the item matches the expected scope.</returns>
+bool TransformBuffer::IsIgnored(const TransformItem& transformation)
+{
+	return IsOfTransformScope(S_IGNORE, transformation);
+}
+
+/// <summary>
+/// Check if a transformation is of a particular scope.
+/// </summary>
+/// <param name="transformation">Transformation item to check.</param>
+/// <returns>Returns true if the item matches the expected scope.</returns>
+bool TransformBuffer::IsAbsolute(const TransformItem& transformation)
+{
+	return IsOfTransformScope(S_ABSOLUTE, transformation);
+}
+
+/// <summary>
+/// Check if a transformation is of a particular scope.
+/// </summary>
+/// <param name="transformation">Transformation item to check.</param>
+/// <returns>Returns true if the item matches the expected scope.</returns>
+bool TransformBuffer::IsRelative(const TransformItem& transformation)
+{
+	return IsOfTransformScope(S_RELATIVE, transformation);
+}
+
+// ------------
 // Check if a transformation is of a particular type.
+
+/// <summary>
+/// Retrieve the type within a given TransformItem.
+/// </summary>
+/// <returns>Returns item type.</returns>
+const TransformBuffer::TransformType TransformBuffer::get_type(const TransformItem& item)
+{
+	return std::get<TransformType>(item);
+}
 
 /// <summary>
 /// Compare two transformation types.
@@ -40,7 +147,7 @@ TransformBuffer::TransformBuffer()
 /// <param name="a">First type.</param>
 /// <param name="b">Second type.</param>
 /// <returns>Returns true if matched, false otherwise.</returns>
-bool TransformBuffer::IsMatchingTransformType(const TRANSFORM_TYPE a, const TRANSFORM_TYPE b) {
+bool TransformBuffer::IsMatchingTransformType(const TransformType a, const TransformType b) {
 	return (a == b);
 }
 
@@ -48,19 +155,19 @@ bool TransformBuffer::IsMatchingTransformType(const TRANSFORM_TYPE a, const TRAN
 /// Check if a transformation is of a particular type.
 /// </summary>
 /// <param name="type">Type to check against.</param>
-/// <param name="transformation">Transformation pairing to check.</param>
-/// <returns>Returns true if the pair matches the expected type.</returns>
-bool TransformBuffer::IsOfTransformType(TRANSFORM_TYPE type, const TransformPair& transformation)
+/// <param name="transformation">Transformation item to check.</param>
+/// <returns>Returns true if the item matches the expected type.</returns>
+bool TransformBuffer::IsOfTransformType(TransformType type, const TransformItem& transformation)
 {
-	return IsMatchingTransformType(type, transformation.first);
+	return IsMatchingTransformType(type, get_type(transformation));
 }
 
 /// <summary>
 /// Check if a transformation is of a particular type.
 /// </summary>
-/// <param name="transformation">Transformation pairing to check.</param>
-/// <returns>Returns true if the pair matches the expected type.</returns>
-bool TransformBuffer::IsNull(const TransformPair& transformation)
+/// <param name="transformation">Transformation item to check.</param>
+/// <returns>Returns true if the item matches the expected type.</returns>
+bool TransformBuffer::IsNull(const TransformItem& transformation)
 {
 	return IsOfTransformType(T_NONE, transformation);
 }
@@ -68,9 +175,9 @@ bool TransformBuffer::IsNull(const TransformPair& transformation)
 /// <summary>
 /// Check if a transformation is of a particular type.
 /// </summary>
-/// <param name="transformation">Transformation pairing to check.</param>
-/// <returns>Returns true if the pair matches the expected type.</returns>
-bool TransformBuffer::IsPosition(const TransformPair& transformation)
+/// <param name="transformation">Transformation item to check.</param>
+/// <returns>Returns true if the item matches the expected type.</returns>
+bool TransformBuffer::IsPosition(const TransformItem& transformation)
 {
 	return IsOfTransformType(T_POSITION, transformation);
 }
@@ -78,9 +185,9 @@ bool TransformBuffer::IsPosition(const TransformPair& transformation)
 /// <summary>
 /// Check if a transformation is of a particular type.
 /// </summary>
-/// <param name="transformation">Transformation pairing to check.</param>
-/// <returns>Returns true if the pair matches the expected type.</returns>
-bool TransformBuffer::IsScale(const TransformPair& transformation)
+/// <param name="transformation">Transformation item to check.</param>
+/// <returns>Returns true if the item matches the expected type.</returns>
+bool TransformBuffer::IsScale(const TransformItem& transformation)
 {
 	return IsOfTransformType(T_SCALE, transformation);
 }
@@ -88,9 +195,9 @@ bool TransformBuffer::IsScale(const TransformPair& transformation)
 /// <summary>
 /// Check if a transformation is of a particular type.
 /// </summary>
-/// <param name="transformation">Transformation pairing to check.</param>
-/// <returns>Returns true if the pair matches the expected type.</returns>
-bool TransformBuffer::IsRotation(const TransformPair& transformation)
+/// <param name="transformation">Transformation item to check.</param>
+/// <returns>Returns true if the item matches the expected type.</returns>
+bool TransformBuffer::IsRotation(const TransformItem& transformation)
 {
 	return IsOfTransformType(T_ROTATION, transformation);
 }
@@ -124,28 +231,52 @@ void TransformBuffer::ConvertTransformation(DirectX::XMFLOAT4& target, const Dir
 // -----------------------------------------------
 
 // ------------
+// TRANSFORM TYPE
+
+/// <summary>
+/// Get the type of the front element.
+/// </summary>
+/// <returns>Returns a Transform type.</returns>
+const TransformBuffer::TransformType TransformBuffer::next_type() const
+{
+	return get_type(this->peek_item());
+}
+
+// ------------
+// TRANSFORM SCOPE
+
+/// <summary>
+/// Get the scope of the front element.
+/// </summary>
+/// <returns>Returns a Transform scope.</returns>
+const TransformBuffer::TransformScope TransformBuffer::next_scope() const
+{
+	return get_scope(this->peek_item());
+}
+
+// ------------
 // TRANSFORM PAIR
 
 /// <summary>
-/// Return the top element as a raw pair.
+/// Return the top element as a raw item.
 /// </summary>
 /// <returns>Returns the front element.</returns>
-const TransformBuffer::TransformPair TransformBuffer::peek_pair() const
+const TransformBuffer::TransformItem& TransformBuffer::peek_item() const
 {
 	return this->peek(internalQueue);
 }
 
 /// <summary>
-/// Return data stored in front pair as a 4D vector.
+/// Return data stored in front item as a 4D vector.
 /// </summary>
 /// <returns>Returns data stored in the next element.</returns>
 const XMFLOAT4 TransformBuffer::peek_float4() const
 {
-	return this->peek_pair().second;
+	return get_data(this->peek_item());
 }
 
 /// <summary>
-/// Return data stored in front pair as a 3D vector.
+/// Return data stored in front item as a 3D vector.
 /// </summary>
 /// <returns>Returns data stored in the next element.</returns>
 const XMFLOAT3 TransformBuffer::peek_float3() const
@@ -159,9 +290,9 @@ const XMFLOAT3 TransformBuffer::peek_float3() const
 /// Store front of queue in target.
 /// </summary>
 /// <param name="target">Location to store data.</param>
-void TransformBuffer::peek(TransformPair& target) const
+void TransformBuffer::peek(TransformItem& target) const
 {
-	target = this->peek_pair();
+	target = this->peek_item();
 }
 
 /// <summary>
@@ -186,6 +317,31 @@ void TransformBuffer::peek(DirectX::XMFLOAT3& target) const
 // Mutators.
 // -----------------------------------------------
 
+// ------------
+// TRANSFORM TYPE
+
+/// <summary>
+/// Change the info for the front element.
+/// </summary>
+/// <param name="type">Type to be set.</param>
+void TransformBuffer::change_item_type(const TransformType type)
+{
+	TransformItem item = this->peek_item();
+	std::get<TransformType>(item) = type;
+}
+
+// ------------
+// TRANSFORM SCOPE
+
+/// <summary>
+/// Change the info for the front element.
+/// </summary>
+/// <param name="scope">Scope to be set.</param>
+void TransformBuffer::change_item_scope(const TransformScope scope)
+{
+	TransformItem item = this->peek_item();
+	std::get<TransformScope>(item) = scope;
+}
 
 // ------------
 // TRANSFORMPAIR
@@ -205,18 +361,20 @@ void TransformBuffer::pop()
 /// Push transformation onto the queue.
 /// </summary>
 /// <param name="source">Data in transformation.</param>
-void TransformBuffer::push_position(const DirectX::XMFLOAT4& source)
+/// <param name="scope">Scope of transformation.</param>
+void TransformBuffer::push_position(const DirectX::XMFLOAT4& source, TransformScope scope)
 {
-	this->push(T_POSITION, source);
+	this->push(T_POSITION, source, scope);
 }
 
 /// <summary>
 /// Push transformation onto the queue.
 /// </summary>
 /// <param name="source">Data in transformation.</param>
-void TransformBuffer::push_position(const DirectX::XMFLOAT3& source)
+/// <param name="scope">Scope of transformation.</param>
+void TransformBuffer::push_position(const DirectX::XMFLOAT3& source, TransformScope scope)
 {
-	this->push(T_POSITION, source);
+	this->push(T_POSITION, source, scope);
 }
 
 /// <summary>
@@ -225,18 +383,20 @@ void TransformBuffer::push_position(const DirectX::XMFLOAT3& source)
 /// <param name="x">Data in transformation.</param>
 /// <param name="y">Data in transformation.</param>
 /// <param name="z">Data in transformation.</param>
-void TransformBuffer::push_position(float x, float y, float z)
+/// <param name="scope">Scope of transformation.</param>
+void TransformBuffer::push_position(float x, float y, float z, TransformScope scope)
 {
-	this->push_position(XMFLOAT3(x, y, z));
+	this->push_position(XMFLOAT3(x, y, z), scope);
 }
 
 /// <summary>
 /// Push transformation onto the queue.
 /// </summary>
 /// <param name="data">Data in transformation.</param>
-void TransformBuffer::push_position(_In_reads_(3) const float *data)
+/// <param name="scope">Scope of transformation.</param>
+void TransformBuffer::push_position(_In_reads_(3) const float *data, TransformScope scope)
 {
-	this->push_position(XMFLOAT3(data));
+	this->push_position(XMFLOAT3(data), scope);
 }
 
 
@@ -244,9 +404,10 @@ void TransformBuffer::push_position(_In_reads_(3) const float *data)
 /// Push transformation onto the queue.
 /// </summary>
 /// <param name="source">Data in transformation.</param>
-void TransformBuffer::push_position(const TRANSFORM& source)
+/// <param name="scope">Scope of transformation.</param>
+void TransformBuffer::push_position(const TRANSFORM& source, TransformScope scope)
 {
-	this->push_position(source.GetPosition());
+	this->push_position(source.GetPosition(), scope);
 }
 
 // ------------
@@ -256,27 +417,30 @@ void TransformBuffer::push_position(const TRANSFORM& source)
 /// Push transformation onto the queue.
 /// </summary>
 /// <param name="source">Data in transformation.</param>
-void TransformBuffer::push_scale(const DirectX::XMFLOAT4& source)
+/// <param name="scope">Scope of transformation.</param>
+void TransformBuffer::push_scale(const DirectX::XMFLOAT4& source, TransformScope scope)
 {
-	this->push(T_SCALE, source);
+	this->push(T_SCALE, source, scope);
 }
 
 /// <summary>
 /// Push transformation onto the queue.
 /// </summary>
 /// <param name="source">Data in transformation.</param>
-void TransformBuffer::push_scale(const DirectX::XMFLOAT3& source)
+/// <param name="scope">Scope of transformation.</param>
+void TransformBuffer::push_scale(const DirectX::XMFLOAT3& source, TransformScope scope)
 {
-	this->push(T_SCALE, source);
+	this->push(T_SCALE, source, scope);
 }
 
 /// <summary>
 /// Push transformation onto the queue.
 /// </summary>
 /// <param name="source">Data in transformation.</param>
-void TransformBuffer::push_scale(const TRANSFORM& source)
+/// <param name="scope">Scope of transformation.</param>
+void TransformBuffer::push_scale(const TRANSFORM& source, TransformScope scope)
 {
-	this->push_scale(source.GetScale());
+	this->push_scale(source.GetScale(), scope);
 }
 
 /// <summary>
@@ -285,18 +449,20 @@ void TransformBuffer::push_scale(const TRANSFORM& source)
 /// <param name="x">Data in transformation.</param>
 /// <param name="y">Data in transformation.</param>
 /// <param name="z">Data in transformation.</param>
-void TransformBuffer::push_scale(float x, float y, float z)
+/// <param name="scope">Scope of transformation.</param>
+void TransformBuffer::push_scale(float x, float y, float z, TransformScope scope)
 {
-	this->push_scale(XMFLOAT3(x, y, z));
+	this->push_scale(XMFLOAT3(x, y, z), scope);
 }
 
 /// <summary>
 /// Push transformation onto the queue.
 /// </summary>
 /// <param name="data">Data in transformation.</param>
-void TransformBuffer::push_scale(_In_reads_(3) const float *data)
+/// <param name="scope">Scope of transformation.</param>
+void TransformBuffer::push_scale(_In_reads_(3) const float *data, TransformScope scope)
 {
-	this->push_scale(XMFLOAT3(data));
+	this->push_scale(XMFLOAT3(data), scope);
 }
 
 // ------------
@@ -306,18 +472,20 @@ void TransformBuffer::push_scale(_In_reads_(3) const float *data)
 /// Push transformation onto the queue.
 /// </summary>
 /// <param name="source">Data in transformation.</param>
-void TransformBuffer::push_rotation(const DirectX::XMFLOAT4& source)
+/// <param name="scope">Scope of transformation.</param>
+void TransformBuffer::push_rotation(const DirectX::XMFLOAT4& source, TransformScope scope)
 {
-	this->push(T_ROTATION, source);
+	this->push(T_ROTATION, source, scope);
 }
 
 /// <summary>
 /// Push transformation onto the queue.
 /// </summary>
 /// <param name="source">Data in transformation.</param>
-void TransformBuffer::push_rotation(const TRANSFORM& source)
+/// <param name="scope">Scope of transformation.</param>
+void TransformBuffer::push_rotation(const TRANSFORM& source, TransformScope scope)
 {
-	this->push_rotation(source.GetRotation());
+	this->push_rotation(source.GetRotation(), scope);
 }
 
 /// <summary>
@@ -327,18 +495,20 @@ void TransformBuffer::push_rotation(const TRANSFORM& source)
 /// <param name="y">Data in transformation.</param>
 /// <param name="z">Data in transformation.</param>
 /// <param name="w">Data in transformation.</param>
-void TransformBuffer::push_rotation(float x, float y, float z, float w)
+/// <param name="scope">Scope of transformation.</param>
+void TransformBuffer::push_rotation(float x, float y, float z, float w, TransformScope scope)
 {
-	this->push_rotation(XMFLOAT4(x, y, z, w));
+	this->push_rotation(XMFLOAT4(x, y, z, w), scope);
 }
 
 /// <summary>
 /// Push transformation onto the queue.
 /// </summary>
 /// <param name="data">Data in transformation.</param>
-void TransformBuffer::push_rotation(_In_reads_(4) const float *data)
+/// <param name="scope">Scope of transformation.</param>
+void TransformBuffer::push_rotation(_In_reads_(4) const float *data, TransformScope scope)
 {
-	this->push_rotation(XMFLOAT4(data));
+	this->push_rotation(XMFLOAT4(data), scope);
 }
 
 // -----------------------------------------------
@@ -418,8 +588,8 @@ bool TransformBuffer::is_empty(const TransformQueue& queue) const
 /// Wrapper for queue.front().
 /// </summary>
 /// <param name="queue">Queue to peek next element from.</param>
-/// <returns>Returns a transform pair.</returns>
-const TransformBuffer::TransformPair TransformBuffer::peek(const TransformQueue& queue) const
+/// <returns>Returns a transform item.</returns>
+const TransformBuffer::TransformItem& TransformBuffer::peek(const TransformQueue& queue) const
 {
 	return queue.front();
 }
@@ -429,7 +599,7 @@ const TransformBuffer::TransformPair TransformBuffer::peek(const TransformQueue&
 /// </summary>
 /// <param name="target">Location to store the next element.</param>
 /// <param name="queue">Queue to peek next element from.</param>
-void TransformBuffer::peek(TransformPair& target, const TransformQueue& queue) const
+void TransformBuffer::peek(TransformItem& target, const TransformQueue& queue) const
 {
 	target = peek(queue);
 }
@@ -450,94 +620,94 @@ void TransformBuffer::pop(TransformQueue& queue)
 // PUSH
 
 /// <summary>
-/// Add pair to end of queue.
+/// Add item to end of queue.
 /// </summary>
 /// <param name="queue">Queue to modify.</param>
-/// <param name="pair">Pair to add.</param>
-void TransformBuffer::push(TransformQueue& queue, TransformPair& pair)
+/// <param name="item">Pair to add.</param>
+void TransformBuffer::push(TransformQueue& queue, TransformItem& item)
 {
-	return queue.push(pair);
+	return queue.push(item);
 }
 
 /// <summary>
-/// Add pair to end of queue.
+/// Add item to end of queue.
 /// </summary>
 /// <param name="queue">Queue to modify.</param>
 /// <param name="type">Pair type.</param>
 /// <param name="data">Pair data.</param>
-void TransformBuffer::push(TransformQueue& queue, TRANSFORM_TYPE type, const DirectX::XMFLOAT4& data)
+void TransformBuffer::push(TransformQueue& queue, TransformType type, const DirectX::XMFLOAT4& data, TransformScope scope)
 {
-	TransformPair pair;
-	this->pair_transformation(pair, type, data);
-	this->push(queue, pair);
+	TransformItem item;
+	this->item_transformation(item, type, data, scope);
+	this->push(queue, item);
 }
 
 /// <summary>
-/// Add pair to end of queue.
+/// Add item to end of queue.
 /// </summary>
 /// <param name="queue">Queue to modify.</param>
 /// <param name="type">Pair type.</param>
 /// <param name="data">Pair data.</param>
-void TransformBuffer::push(TransformQueue& queue, TRANSFORM_TYPE type, const DirectX::XMFLOAT3& data)
+void TransformBuffer::push(TransformQueue& queue, TransformType type, const DirectX::XMFLOAT3& data, TransformScope scope)
 {
 	XMFLOAT4 conversion;
 	TransformBuffer::ConvertTransformation(conversion, data);
-	this->push(queue, type, conversion);
+	this->push(queue, type, conversion, scope);
 }
 
 /// <summary>
-/// Push pair of TRANSFORM_TYPE type to queue.
+/// Push item of TransformType type to queue.
 /// </summary>
 /// <param name="type">Type to push.</param>
 /// <param name="data">Data to store.</param>
-void  TransformBuffer::push(TRANSFORM_TYPE type, const DirectX::XMFLOAT4& data)
+void  TransformBuffer::push(TransformType type, const DirectX::XMFLOAT4& data, TransformScope scope)
 {
-	this->push(internalQueue, type, data);
+	this->push(internalQueue, type, data, scope);
 }
 
 /// <summary>
-/// Push pair of TRANSFORM_TYPE type to queue.
+/// Push item of TransformType type to queue.
 /// </summary>
 /// <param name="type">Type to push.</param>
 /// <param name="data">Data to store.</param>
-void  TransformBuffer::push(TRANSFORM_TYPE type, const DirectX::XMFLOAT3& data)
+void  TransformBuffer::push(TransformType type, const DirectX::XMFLOAT3& data, TransformScope scope)
 {
-	this->push(internalQueue, type, data);
+	this->push(internalQueue, type, data, scope);
 }
 
 /// <summary>
-/// Push pair of TransformBuffer::TRANSFORM_TYPE type to queue.
+/// Push item of TransformBuffer::TransformType type to queue.
 /// </summary>
 /// <param name="type">Type to push.</param>
 /// <param name="x">Data to store.</param>
 /// <param name="y">Data to store.</param>
 /// <param name="z">Data to store.</param>
-void  TransformBuffer::push(TRANSFORM_TYPE type, float x, float y, float z)
+void  TransformBuffer::push(TransformType type, float x, float y, float z, TransformScope scope)
 {
-	this->push(type, XMFLOAT3(x, y, z));
+	this->push(type, XMFLOAT3(x, y, z), scope);
 }
 
 /// <summary>
-/// Push pair of TRANSFORM_TYPE type to queue.
+/// Push item of TransformType type to queue.
 /// </summary>
 /// <param name="type">Type to push.</param>
 /// <param name="x">Data to store.</param>
 /// <param name="y">Data to store.</param>
 /// <param name="z">Data to store.</param>
 /// <param name="w">Data to store.</param>
-void  TransformBuffer::push(TRANSFORM_TYPE type, float x, float y, float z, float w)
+void  TransformBuffer::push(TransformType type, float x, float y, float z, float w, TransformScope scope)
 {
-	this->push(type, XMFLOAT4(x, y, z, w));
+	this->push(type, XMFLOAT4(x, y, z, w), scope);
 }
 
 /// <summary>
-/// Push pair of TRANSFORM_TYPE type to queue.
+/// Push item of TransformType type to queue.
 /// </summary>
 /// <param name="type">Type to push.</param>
 /// <param name="data">Data to store.</param>
-void  TransformBuffer::push(TRANSFORM_TYPE type, _In_reads_(4) const float *data)
+void  TransformBuffer::push(TransformType type, _In_reads_(4) const float *data, TransformScope scope)
 {
-	this->push(type, XMFLOAT4(data));
+	this->push(type, XMFLOAT4(data), scope);
 }
 
 // ------------
@@ -549,9 +719,9 @@ void  TransformBuffer::push(TRANSFORM_TYPE type, _In_reads_(4) const float *data
 /// <param name="target">Where the resulting TransformPair is stored.</param>
 /// <param name="type">Type of transformation.</param>
 /// <param name="transformation">Transformation data.</param>
-void TransformBuffer::pair_transformation(TransformPair& target, TRANSFORM_TYPE type, const DirectX::XMFLOAT4& transformation)
+void TransformBuffer::item_transformation(TransformItem& target, TransformType type, const DirectX::XMFLOAT4& transformation, TransformScope scope)
 {
-	target = TransformPair(type, transformation);
+	target = TransformItem(type, transformation, scope);
 }
 
 /// <summary>
@@ -560,11 +730,11 @@ void TransformBuffer::pair_transformation(TransformPair& target, TRANSFORM_TYPE 
 /// <param name="target">Where the resulting TransformPair is stored.</param>
 /// <param name="type">Type of transformation.</param>
 /// <param name="transformation">Transformation data.</param>
-void TransformBuffer::pair_transformation(TransformPair& target, TRANSFORM_TYPE type, const DirectX::XMFLOAT3& transformation)
+void TransformBuffer::item_transformation(TransformItem& target, TransformType type, const DirectX::XMFLOAT3& transformation, TransformScope scope)
 {
 	XMFLOAT4 conversion;
 	TransformBuffer::ConvertTransformation(conversion, transformation);
-	this->pair_transformation(target, type, conversion);
+	this->item_transformation(target, type, conversion, scope);
 }
 
 /// <summary>
@@ -572,9 +742,9 @@ void TransformBuffer::pair_transformation(TransformPair& target, TRANSFORM_TYPE 
 /// </summary>
 /// <param name="target">Where the resulting TransformPair is stored.</param>
 /// <param name="transformation">Transformation data.</param>
-void TransformBuffer::pair_position(TransformPair& target, const DirectX::XMFLOAT4 transformation)
+void TransformBuffer::item_position(TransformItem& target, const DirectX::XMFLOAT4 transformation, TransformScope scope)
 {
-	this->pair_transformation(target, T_POSITION, transformation);
+	this->item_transformation(target, T_POSITION, transformation, scope);
 }
 
 /// <summary>
@@ -582,9 +752,9 @@ void TransformBuffer::pair_position(TransformPair& target, const DirectX::XMFLOA
 /// </summary>
 /// <param name="target">Where the resulting TransformPair is stored.</param>
 /// <param name="transformation">Transformation data.</param>
-void TransformBuffer::pair_position(TransformPair& target, const DirectX::XMFLOAT3 transformation)
+void TransformBuffer::item_position(TransformItem& target, const DirectX::XMFLOAT3 transformation, TransformScope scope)
 {
-	this->pair_transformation(target, T_POSITION, transformation);
+	this->item_transformation(target, T_POSITION, transformation, scope);
 }
 
 /// <summary>
@@ -592,9 +762,9 @@ void TransformBuffer::pair_position(TransformPair& target, const DirectX::XMFLOA
 /// </summary>
 /// <param name="target">Where the resulting TransformPair is stored.</param>
 /// <param name="transformation">Transformation data.</param>
-void TransformBuffer::pair_scale(TransformPair& target, const DirectX::XMFLOAT4 transformation)
+void TransformBuffer::item_scale(TransformItem& target, const DirectX::XMFLOAT4 transformation, TransformScope scope)
 {
-	this->pair_transformation(target, T_SCALE, transformation);
+	this->item_transformation(target, T_SCALE, transformation, scope);
 }
 
 /// <summary>
@@ -602,9 +772,9 @@ void TransformBuffer::pair_scale(TransformPair& target, const DirectX::XMFLOAT4 
 /// </summary>
 /// <param name="target">Where the resulting TransformPair is stored.</param>
 /// <param name="transformation">Transformation data.</param>
-void TransformBuffer::pair_scale(TransformPair& target, const DirectX::XMFLOAT3 transformation)
+void TransformBuffer::item_scale(TransformItem& target, const DirectX::XMFLOAT3 transformation, TransformScope scope)
 {
-	this->pair_transformation(target, T_SCALE, transformation);
+	this->item_transformation(target, T_SCALE, transformation, scope);
 }
 
 /// <summary>
@@ -612,9 +782,9 @@ void TransformBuffer::pair_scale(TransformPair& target, const DirectX::XMFLOAT3 
 /// </summary>
 /// <param name="target">Where the resulting TransformPair is stored.</param>
 /// <param name="transformation">Transformation data.</param>
-void TransformBuffer::pair_rotation(TransformPair& target, const DirectX::XMFLOAT4 transformation)
+void TransformBuffer::item_rotation(TransformItem& target, const DirectX::XMFLOAT4 transformation, TransformScope scope)
 {
-	this->pair_transformation(target, T_ROTATION, transformation);
+	this->item_transformation(target, T_ROTATION, transformation, scope);
 }
 
 // ------------
@@ -626,7 +796,7 @@ void TransformBuffer::pair_rotation(TransformPair& target, const DirectX::XMFLOA
 /// <param name="a">First type.</param>
 /// <param name="b">Second type.</param>
 /// <returns>Returns true if types match, false otherwise.</returns>
-bool TransformBuffer::is_type(TRANSFORM_TYPE a, TRANSFORM_TYPE b) const
+bool TransformBuffer::is_type(TransformType a, TransformType b) const
 {
 	return IsMatchingTransformType(a, b);
 }
@@ -637,7 +807,32 @@ bool TransformBuffer::is_type(TRANSFORM_TYPE a, TRANSFORM_TYPE b) const
 /// <param name="a">First type.</param>
 /// <param name="b">Second type.</param>
 /// <returns>Returns true if types match, false otherwise.</returns>
-bool TransformBuffer::is_type(TRANSFORM_TYPE a, TransformPair& b) const
+bool TransformBuffer::is_type(TransformType a, TransformItem& b) const
 {
 	return IsOfTransformType(a, b);
+}
+
+// ------------
+// TRANSFORM SCOPE COMPARISONS
+
+/// <summary>
+/// Compare two related objects for transform scope equality.
+/// </summary>
+/// <param name="a">First scope.</param>
+/// <param name="b">Second scope.</param>
+/// <returns>Returns true if scopes match, false otherwise.</returns>
+bool TransformBuffer::is_scope(TransformScope a, TransformScope b) const
+{
+	return IsMatchingTransformScope(a, b);
+}
+
+/// <summary>
+/// Compare two related objects for transform scope equality.
+/// </summary>
+/// <param name="a">First scope.</param>
+/// <param name="b">Second scope.</param>
+/// <returns>Returns true if scopes match, false otherwise.</returns>
+bool TransformBuffer::is_scope(TransformScope a, TransformItem& b) const
+{
+	return IsOfTransformScope(a, b);
 }

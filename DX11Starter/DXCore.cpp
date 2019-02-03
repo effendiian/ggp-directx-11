@@ -1,6 +1,7 @@
 #include "DXCore.h"
 #include <WindowsX.h>
 #include <sstream>
+#include <ctime>
 
 #pragma warning( push )
 #pragma warning( disable : 6387 )
@@ -352,6 +353,10 @@ HRESULT DXCore::Run()
 	startTime = now;
 	currentTime = now;
 	previousTime = now;
+
+	// -----------------
+	// Seed the random number generator.
+	srand((unsigned int)(time(NULL)) + GetCurrentProcessId());
 
 	// Give subclass a chance to initialize
 	Init();
