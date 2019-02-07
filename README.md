@@ -30,21 +30,21 @@ Throughout the semester, students were assigned different sections of the code t
 
 The master branch will always be the most feature complete; the most recent assignment will be merged back into the master after submission.
 
-## Assignment 3 - Making Things Move ##
+## Assignment 4 - Cameras & Materials ##
 
-This branch contains the work for [Assignment 3: Making Things Move](https://mycourses.rit.edu/d2l/le/content/736702/viewContent/5582574/View) (link requires access to MyCourses).
+This branch contains the work for [Assignment 4: Cameras & Materials](https://mycourses.rit.edu/d2l/le/content/736702/viewContent/5582577/View) (link requires access to MyCourses).
 
 ### Overview ###
 
-[x] Create a class that represents individual **game entities** and their transformations.
+[ ] Create a **camera class** that acts like a first person flying camera (with user input).
 
-[x] Ensure that Meshes can be **shared** among multiple entities.
+[ ] Make sure the camera class properly updates its **view and projection matrices**.
 
-[x] **Create** and **draw** at least 5 shared entities, with several sharing the same Mesh object.
+[ ] Create a **material class** that represents a set of vertex and pixel shaders.
 
-[x] **Update** your entity transformations each frame so the entities move/scale/etc.
+[ ] Update your entity class to also keep track of **its own material**.
 
-[x] Ensure you have no **warnings**, **memory leaks** or **DX resource leaks**.
+[ ] Ensure you have no **warnings**, **memory leaks** or **DX resource leaks**.
 
 ## Binaries Not Included ##
 
