@@ -4,6 +4,237 @@
 // Include statements.
 // --------------------------------------
 #include <DirectXMath.h>
+#include <array>
+
+// ------------------------------------
+// Aiding structures.
+// ------------------------------------
+
+/// <summary>
+/// Contains options for Camera objects.
+/// </summary>
+struct CameraOptions {
+
+public:
+
+	// --------------------
+	// Static methods.
+
+	static CameraOptions GetDefaultCameraOptions();
+	const float PI = 3.1415926535f; // Rounded PI value.
+
+	// --------------------
+	// Friend methods.
+
+	friend void swap(CameraOptions& lhs, CameraOptions& rhs);
+
+	// --------------------
+	// Constructor(s).
+
+	CameraOptions();
+	CameraOptions(
+		float fov, float w, float h,
+		float nearClip, float farClip
+	);
+	~CameraOptions();
+	CameraOptions(const CameraOptions& other);
+	CameraOptions(CameraOptions&& other) noexcept;
+	CameraOptions& operator=(CameraOptions other);
+
+	// --------------------
+	// Accessors.
+
+	float GetFieldOfView() const;
+	float GetWidth() const;
+	float GetHeight() const;
+	float GetAspectRatio() const;
+	float GetNearClippingPlane() const;
+	float GetFarClippingPlane() const;
+
+	// --------------------
+	// Mutators.
+
+	void SetFieldOfView(float value);
+	void SetWidth(float value);
+	void SetWidthByAspectRatio(float ratio, float height);
+	void SetHeight(float value);
+	void SetHeightByAspectRatio(float ratio, float width);
+	void SetNearClippingPlane(float value);
+	void SetFarClippingPlane(float value);
+
+	// --------------------
+	// Service methods.
+
+	void UpdateAspectRatio();
+
+private:
+
+	// --------------------
+	// Data members.
+
+	float fieldOfView; // Field of View angle.
+	float width; // Viewport width.
+	float height; // Viewport height.
+	float aspectRatio; // Update the calculated aspect ratio.
+	float nearPlane; // Near clipping plane.
+	float farPlane; // Far clipping plane.
+
+};
+
+/// <summary>
+/// Holds normalized unit vectors.
+/// </summary>
+struct UnitVector {
+
+	// --------------------
+	// Static Methods.
+
+	static UnitVector GetDefaultUp();
+	static UnitVector GetDefaultRight();
+	static UnitVector GetDefaultForward();
+
+	// --------------------
+	// Friend methods.
+
+	// Reference: https://stackoverflow.com/questions/3279543/what-is-the-copy-and-swap-idiom
+	friend void swap(UnitVector& lhs, UnitVector& rhs);
+
+	// -------------
+	// Constructor(s).
+
+	UnitVector();
+	UnitVector(DirectX::XMFLOAT3 vector);
+	UnitVector(float x, float y, float z);
+	UnitVector(_In_reads_(3) const float* source);
+	~UnitVector(); // Destructor.
+	UnitVector(const UnitVector& other); // Copy constructor.
+	UnitVector(UnitVector&& other) noexcept; // Move constructor.
+	UnitVector& operator=(UnitVector other); // Move/Copy assignment. Both handled via C++11.
+
+	// -------------
+	// Accessors.
+
+	DirectX::XMFLOAT3 Get() const;
+	float Get(unsigned int dimension) const;
+
+	DirectX::XMFLOAT3 Scale(float magnitude) const;
+
+	// -------------
+	// Mutators.
+
+	void Set(float x, float y, float z);
+	void Set(_In_reads_(3) const float* source);
+	void Set(DirectX::XMFLOAT3 vector);
+
+private:
+
+	// -------------
+	// Data members.
+
+	std::array<float, 3> data;
+
+	// -------------
+	// Helper methods.
+
+	void normalize();
+
+};
+
+/// <summary>
+/// Wrapper for functionality to handle movement.
+/// </summary>
+struct TransformDescription {
+
+	// --------------------
+	// Static Methods.
+
+	static TransformDescription GetDefaultTransform();
+
+	// --------------------
+	// Friend methods.
+
+	friend void swap(TransformDescription& lhs, TransformDescription& rhs);
+
+	// -------------
+	// Constructor.
+
+	TransformDescription();
+	TransformDescription(DirectX::XMFLOAT3 _position);
+	TransformDescription(
+		DirectX::XMFLOAT3 _position,
+		DirectX::XMFLOAT3 _rotation
+	);
+	TransformDescription(
+		float pX, float pY, float pZ,
+		float rX, float rY, float rZ
+	);
+	TransformDescription(
+		_In_reads_(3) const float* _position,
+		_In_reads_(3) const float* _rotation
+	);
+	~TransformDescription();
+	TransformDescription(const TransformDescription& other);
+	TransformDescription(TransformDescription&& other) noexcept;
+	TransformDescription& operator=(TransformDescription other);
+
+	// -------------
+	// Accessors.
+
+	DirectX::XMFLOAT3 GetStartingPosition() const;
+	void GetStartingPosition(DirectX::XMFLOAT3& target) const;
+
+	DirectX::XMFLOAT3 GetCurrentPosition() const;
+	void GetCurrentPosition(DirectX::XMFLOAT3& target) const;
+
+	DirectX::XMFLOAT3 GetBaseOrientation() const;
+	void GetBaseOrientation(DirectX::XMFLOAT3& target) const;
+
+	DirectX::XMFLOAT3 GetCurrentOrientation() const;
+	void GetCurrentOrientation(DirectX::XMFLOAT3& target) const;
+
+	DirectX::XMFLOAT3 GetHeading() const;
+	void GetHeading(DirectX::XMFLOAT3& target) const;
+
+	// -------------
+	// Mutators.
+
+	void Translate(UnitVector direction, float scale);
+	void Translate(DirectX::XMFLOAT3 delta);
+	void Rotate(DirectX::XMFLOAT3 delta);
+
+	void SetPosition(DirectX::XMFLOAT3 absolute);
+	void SetRotation(DirectX::XMFLOAT3 absolute);
+
+	// -------------
+	// Service methods.
+
+	void Reset();
+	void UpdatePosition(float deltaTime, float totalTime, DirectX::XMFLOAT3 speed, bool isRelative = true); // Relative translation.
+	void UpdateRotation(float deltaTime, float totalTime, DirectX::XMFLOAT3 speed, bool isRelative = true); // Relative rotation.
+
+private:
+
+	// -------------
+	// Data members.
+
+	UnitVector heading; // Forward vector.
+	DirectX::XMFLOAT3 position_start; // Starting position in local space.
+	DirectX::XMFLOAT3 position; // Position of user camera in local space.
+	DirectX::XMFLOAT3 orientation_start; // Yaw (x), Pitch (y), Roll (z) for base orientation.
+	DirectX::XMFLOAT3 orientation; // Yaw (x), Pitch (y), Roll (z) for camera rotation. Rotation around z-axis is usually locked.
+
+	// -------------
+	// Helper members.
+
+	void CalculateHeading();
+
+};
+
+// ------------------------------------
+// ------------------------------------
+// Main class.
+// ------------------------------------
+// ------------------------------------
 
 /// <summary>
 /// Defines a view in a 3D scene.
@@ -11,230 +242,46 @@
 class Camera
 {
 public:
+	// ------------------------------------
+	// Static methods.
+	// ------------------------------------
+
+	static Camera GetDefaultCamera();
 
 	// ------------------------------------
-	// Internal Struct.
+	// Friend methods.
 	// ------------------------------------
-	
-	/// <summary>
-	/// Holds normalized unit vectors.
-	/// </summary>
-	struct UnitVector {
 
-		// --------------------
-		// Static Methods.
-
-		static UnitVector GetUp();
-		static UnitVector GetRight();
-		static UnitVector GetForward();
-
-		// -------------
-		// Constructor.
-
-		UnitVector(DirectX::XMFLOAT3 vector);
-		UnitVector(float x, float y, float z);
-		UnitVector(float* data);
-
-		// -------------
-		// Accessors.
-
-		DirectX::XMFLOAT3 Get() const;
-		float Get(unsigned int dimension) const;
-
-		DirectX::XMFLOAT3 Scale(float magnitude) const;
-
-		// -------------
-		// Mutators.
-
-		void Set(DirectX::XMFLOAT3 vector);
-		void Set(float x, float y, float z);
-		void Set(float* data);
-		
-	private:
-
-		// -------------
-		// Data members.
-
-		float* internal_array;
-		
-		// -------------
-		// Helper methods.
-
-		void normalize();
-
-	};
-	
-	/// <summary>
-	/// Wrapper for functionality to handle movement.
-	/// </summary>
-	struct TransformDescription {
-
-		// --------------------
-		// Static Methods.
-
-		static TransformDescription GetDefaultTransform();
-		
-		// -------------
-		// Constructor.
-
-		TransformDescription();
-		TransformDescription(DirectX::XMFLOAT3 position);
-		TransformDescription(
-			DirectX::XMFLOAT3 position,
-			DirectX::XMFLOAT3 orientation,
-			DirectX::XMFLOAT3 rotation
-		);
-		TransformDescription(
-			float pX, float pY, float pZ,
-			float oX, float oY, float oZ,
-			float rX, float rY, float rZ
-		);
-		TransformDescription(
-			float* position, 
-			float* orientation, 
-			float* rotation
-		);
-
-		// -------------
-		// Accessors.
-
-		DirectX::XMFLOAT3 GetStartingPosition() const;
-		void GetStartingPosition(DirectX::XMFLOAT3& target) const;
-
-		DirectX::XMFLOAT3 GetCurrentPosition() const;
-		void GetCurrentPosition(DirectX::XMFLOAT3& target) const;
-
-		DirectX::XMFLOAT3 GetBaseOrientation() const;
-		void GetBaseOrientation(DirectX::XMFLOAT3& target) const;
-
-		DirectX::XMFLOAT3 GetCurrentOrientation() const;
-		void GetCurrentOrientation(DirectX::XMFLOAT3& target) const;
-
-		UnitVector GetHeading() const;
-
-		// -------------
-		// Service methods.
-		void Update(float deltaTime, float totalTime);
-		void UpdatePosition(float deltaTime, float totalTime, DirectX::XMFLOAT3 speed, bool isRelative = true); // Relative translation.
-		void UpdateRotation(float deltaTime, float totalTime, DirectX::XMFLOAT3 rotation, bool isRelative = true); // Relative rotation.
-
-	private:
-
-		// -------------
-		// Data members.
-
-		DirectX::XMFLOAT3 position_start; // Starting position in local space.
-		DirectX::XMFLOAT3 position; // Position of user camera in local space.
-		DirectX::XMFLOAT3 orientation_start; // Yaw (x), Pitch (y), Roll (z) for base orientation.
-		DirectX::XMFLOAT3 orientation; // Yaw (x), Pitch (y), Roll (z) for camera rotation. Rotation around z-axis is usually locked.
-
-		// -------------
-		// Mutators.
-
-		void Translate(DirectX::XMFLOAT3 delta);
-		void Rotate(DirectX::XMFLOAT3 delta);
-		void SetPosition(DirectX::XMFLOAT3 absolute);
-		void SetRotation(DirectX::XMFLOAT3 absolute);
-
-	};
-	
-	/// <summary>
-	/// Contains options for Camera objects.
-	/// </summary>
-	struct CameraOptions {
-
-	public:
-
-		// --------------------
-		// Static methods.
-				
-		static CameraOptions GetDefaultCameraOptions();
-		const float PI = 3.1415926535f; // Rounded PI value.
-
-		// --------------------
-		// Constructor(s).
-
-		CameraOptions();
-		CameraOptions(
-			float fov, float w, float h,
-			float nearClip, float farClip
-		);
-
-		// --------------------
-		// Accessors.
-
-		float GetFieldOfView() const;
-		float GetWidth() const;
-		float GetHeight() const;
-		float GetNearClippingPlane() const;
-		float GetFarClippingPlane() const;
-		float GetAspectRatio() const;
-		DirectX::XMFLOAT4X4 GetAspectRatio() const;
-
-		// --------------------
-		// Mutators.
-
-		void SetFieldOfView(float value);
-		void SetWidth(float value);
-		void SetHeight(float value);
-		void SetNearClippingPlane(float value);
-		void SetFarClippingPlane(float value);
-		void SetAspectRatio(float value);
-		
-		// --------------------
-		// Service methods.
-
-		void CalculateAspectRatio();
-
-	private:
-
-		// --------------------
-		// Data members.
-
-		float fieldOfView; // Field of View angle.
-		float width; // Viewport width.
-		float height; // Viewport height.
-		struct planes {
-			float near; // Near clipping plane.
-			float far; // Far clipping plane.
-		};
-
-		// --------------------
-		// Accessors.
-		
-
-		// --------------------
-		// Mutators.
-
-		// --------------------
-		// Helper methods.
-
-
-	};
+	friend void swap(Camera& lhs, Camera& rhs);
 
 	// ------------------------------------
 	// Constructors.
 	// ------------------------------------
 
 	Camera();
-	Camera(TransformDescription transform);
-	Camera(DirectX::XMFLOAT3 position);
+	Camera(CameraOptions options);
+	Camera(CameraOptions options, TransformDescription transform);
+	Camera(CameraOptions options, DirectX::XMFLOAT3 position);
 	Camera(
+		CameraOptions options,
 		DirectX::XMFLOAT3 position,
-		DirectX::XMFLOAT3 orientation,
 		DirectX::XMFLOAT3 rotation
 	);
 	Camera(
+		CameraOptions options,
 		float pX, float pY, float pZ,
-		float oX, float oY, float oZ,
 		float rX, float rY, float rZ
 	);
 	Camera(
-		float* position,
-		float* orientation,
-		float* rotation
+		CameraOptions options,
+		_In_reads_(3) const float* _position,
+		_In_reads_(3) const float* _rotation
 	);
-	
+	~Camera();
+	Camera(const Camera& other);
+	Camera(Camera&& other) noexcept;
+	Camera& operator=(Camera other);
+
 	// ------------------------------------
 	// Accessors.
 	// ------------------------------------
@@ -252,15 +299,22 @@ public:
 	// Mutators.
 	// ------------------------------------
 
-	void MoveBy(DirectX::XMFLOAT3 delta);
-	void MoveTo(DirectX::XMFLOAT3 absolute);
-
-	void RotateBy(DirectX::XMFLOAT3 delta);
-	void RotateTo(DirectX::XMFLOAT3 absolute);
+	void SetFOV(float fov);
+	void SetDimensions(float width, float height);
+	void SetClippingPlane(float nearPlane, float farPlane);
 
 	// ------------------------------------
 	// Service methods.
 	// ------------------------------------
+
+	void UpdatePosition(float deltaTime, float totalTime, DirectX::XMFLOAT3 speed, bool isRelative = true); // Relative translation.
+	void UpdateRotation(float deltaTime, float totalTime, DirectX::XMFLOAT3 speed, bool isRelative = true); // Relative rotation.
+
+	void UpdateViewMatrix();
+	void UpdateProjectionMatrix();
+
+	void CalculateViewMatrix(DirectX::XMFLOAT4X4& target);
+	void CalculateProjectionMatrix(DirectX::XMFLOAT4X4& target);
 
 private:
 
@@ -269,6 +323,7 @@ private:
 	// ------------------------------------
 
 	TransformDescription transform; // Contains position/orientation information.
+	CameraOptions settings; // Contains the settings for the camera object.
 	DirectX::XMFLOAT4X4 view; // Stores the view matrix.
 	DirectX::XMFLOAT4X4 projection; // Stores the projection matrix.
 
@@ -282,12 +337,26 @@ private:
 	DirectX::XMFLOAT3 GetCurrentOrientation() const;
 	void GetCurrentOrientation(DirectX::XMFLOAT3& target) const;
 
+	CameraOptions GetSettings() const;
+
+	// ------------------------------------
+	// Mutators.
+	// ------------------------------------
+
+	void MoveBy(DirectX::XMFLOAT3 delta);
+	void MoveTo(DirectX::XMFLOAT3 absolute);
+
+	void RotateBy(DirectX::XMFLOAT3 delta);
+	void RotateTo(DirectX::XMFLOAT3 absolute);
+
 	// ------------------------------------
 	// Helper methods.
 	// ------------------------------------
 
-	void CalculateViewMatrix(DirectX::XMFLOAT4X4 source);
-	void CalculateProjectionMatrix(DirectX::XMFLOAT4X4 source);
+	void OnResize(); // Update the projection matrix.
+
+	DirectX::XMFLOAT4X4 CalculateViewMatrix();
+
+	DirectX::XMFLOAT4X4 CalculateProjectionMatrix();
 
 };
-

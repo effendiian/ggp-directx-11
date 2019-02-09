@@ -1,5 +1,6 @@
 #include "Game.h"
 #include "Vertex.h"
+#include "Camera.h"
 #include <cstdlib>
 
 // For the DirectX Math library
@@ -29,9 +30,10 @@ Game::Game(HINSTANCE hInstance)
 	pixelShader = 0;
 
 	// Initialize
-	worldMatrix = XMFLOAT4X4();
+	// worldMatrix = XMFLOAT4X4();
 	viewMatrix = XMFLOAT4X4();
 	projectionMatrix = XMFLOAT4X4();
+	camera = Camera(); // Default camera settings.
 	prevMousePos = POINT();
 
 	// Initialize the meshes.
@@ -136,14 +138,20 @@ void Game::LoadShaders()
 // --------------------------------------------------------
 void Game::CreateMatrices()
 {
+	// Initial updates to create the matrices.
+	
+	camera.UpdateViewMatrix();
+	camera.UpdateProjectionMatrix();
+
+	
 	// Set up world matrix
 	// - In an actual game, each object will need one of these and they should
 	//    update when/if the object moves (every frame)
 	// - You'll notice a "transpose" happening below, which is redundant for
 	//    an identity matrix.  This is just to show that HLSL expects a different
 	//    matrix (column major vs row major) than the DirectX Math library
-	XMMATRIX W = XMMatrixIdentity();
-	XMStoreFloat4x4(&worldMatrix, XMMatrixTranspose(W)); // Transpose for HLSL!
+	// XMMATRIX W = XMMatrixIdentity();
+	// XMStoreFloat4x4(&worldMatrix, XMMatrixTranspose(W)); // Transpose for HLSL!
 
 	// Create the View matrix
 	// - In an actual game, recreate this matrix every time the camera
@@ -159,7 +167,7 @@ void Game::CreateMatrices()
 		pos,     // The position of the "camera"
 		dir,     // Direction the camera is looking
 		up);     // "Up" direction in 3D space (prevents roll)
-	XMStoreFloat4x4(&viewMatrix, XMMatrixTranspose(V)); // Transpose for HLSL!
+	// XMStoreFloat4x4(&viewMatrix, XMMatrixTranspose(V)); // Transpose for HLSL!
 
 	// Create the Projection matrix
 	// - This should match the window's aspect ratio, and also update anytime
@@ -169,7 +177,8 @@ void Game::CreateMatrices()
 		(float)width / height,		// Aspect ratio
 		0.1f,						// Near clip plane distance
 		100.0f);					// Far clip plane distance
-	XMStoreFloat4x4(&projectionMatrix, XMMatrixTranspose(P)); // Transpose for HLSL!
+	// XMStoreFloat4x4(&projectionMatrix, XMMatrixTranspose(P)); // Transpose for HLSL!
+	
 }
 
 
@@ -356,13 +365,16 @@ void Game::OnResize()
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
 
-	// Update our projection matrix since the window size changed
-	XMMATRIX P = XMMatrixPerspectiveFovLH(
+	// Update the camera size.
+	// this->camera.SetDimensions((float) width, (float) height); // Updates the aspect ratio and updates the projection matrix.
+
+	// ORIGINAL: Update our projection matrix since the window size changed
+	/* XMMATRIX P = XMMatrixPerspectiveFovLH(
 		0.25f * 3.1415926535f,	// Field of View Angle
 		(float)width / height,	// Aspect ratio
 		0.1f,				  	// Near clip plane distance
 		100.0f);			  	// Far clip plane distance
-	XMStoreFloat4x4(&projectionMatrix, XMMatrixTranspose(P)); // Transpose for HLSL!
+	XMStoreFloat4x4(&projectionMatrix, XMMatrixTranspose(P)); // Transpose for HLSL! */
 }
 
 // --------------------------------------------------------
@@ -500,13 +512,15 @@ void Game::Draw(float deltaTime, float totalTime)
 	for (int i = 0; i < gameEntityCount; i++)
 	{
 		// Load the values.
-		XMFLOAT4X4 wMat = gameEntities[i]->GetWorldMatrix();
+		XMFLOAT4X4 entityWorldMatrix = gameEntities[i]->GetWorldMatrix();
 
 		// For each frame.
 		// - set matrices.
-		vertexShader->SetMatrix4x4("world", wMat);
+		vertexShader->SetMatrix4x4("world", entityWorldMatrix);
 		vertexShader->SetMatrix4x4("view", viewMatrix);
 		vertexShader->SetMatrix4x4("projection", projectionMatrix);
+		// vertexShader->SetMatrix4x4("view", camera.GetViewMatrix());
+		// vertexShader->SetMatrix4x4("projection", camera.GetProjectionMatrix());
 
 		// Send buffer data to the vertex shader.
 		vertexShader->CopyAllBufferData();
@@ -566,7 +580,7 @@ void Game::OnMouseDown(WPARAM buttonState, int x, int y)
 	prevMousePos.x = x;
 	prevMousePos.y = y;
 
-	// Caputure the mouse so we keep getting mouse move
+	// Capture the mouse so we keep getting mouse move
 	// events even if the mouse leaves the window.  we'll be
 	// releasing the capture once a mouse button is released
 	SetCapture(hWnd);
