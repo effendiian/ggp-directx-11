@@ -2,6 +2,7 @@
 #include "Vertex.h"
 #include "Camera.h"
 #include <cstdlib>
+#include <map>
 
 // For the DirectX Math library
 using namespace DirectX;
@@ -31,10 +32,14 @@ Game::Game(HINSTANCE hInstance)
 
 	// Initialize
 	// worldMatrix = XMFLOAT4X4();
-	viewMatrix = XMFLOAT4X4();
-	projectionMatrix = XMFLOAT4X4();
+	// viewMatrix = XMFLOAT4X4();
+	// projectionMatrix = XMFLOAT4X4();
 	camera = Camera(); // Default camera settings.
 	prevMousePos = POINT();
+
+	// Initialize the key mapping.
+	keyMap = KeyMappings();
+	keyCodes = KeyCodes();
 
 	// Initialize the meshes.
 	meshCount = 3;
@@ -107,6 +112,7 @@ void Game::Init()
 	// geometry to draw and some simple camera matrices.
 	//  - You'll be expanding and/or replacing these later
 	LoadShaders();
+	CreateInput();
 	CreateMatrices();
 	CreateBasicGeometry();
 	CreateEntities();
@@ -132,6 +138,41 @@ void Game::LoadShaders()
 	pixelShader->LoadShaderFile(L"PixelShader.cso");
 }
 
+void Game::CreateInput() 
+{
+	// Assign mappings.
+
+	// Camera movement.
+	keyMap[ACTION::CAMERA_MOVE_UP] = "SPACEBAR";
+	keyMap[ACTION::CAMERA_MOVE_DOWN] = 'X';
+	keyMap[ACTION::CAMERA_MOVE_FORWARD] = 'W';
+	keyMap[ACTION::CAMERA_MOVE_BACKWARD] = 'S';
+	keyMap[ACTION::CAMERA_MOVE_LEFT] = 'A';
+	keyMap[ACTION::CAMERA_MOVE_RIGHT] = 'D';
+
+	keyMap[ACTION::CAMERA_TURN_LEFT] = 'Q';
+	keyMap[ACTION::CAMERA_TURN_RIGHT] = 'E';
+	keyMap[ACTION::CAMERA_PITCH_UP] = "RW";
+	keyMap[ACTION::CAMERA_PITCH_DOWN] = "RS";
+	keyMap[ACTION::CAMERA_ROLL_LEFT] = "RA";
+	keyMap[ACTION::CAMERA_ROLL_RIGHT] = "RD";
+
+	keyMap[ACTION::MODIFIER_ROTATE] = "R";
+
+	// Assign codes by looping through the mappings.
+	for (auto const& mapping : keyMap)
+	{
+		// Get the key and the associated value.
+		ACTION key = mapping.first;
+		std::string input = mapping.second;
+
+		// Assign all values to false.
+		if (input.length() > 0) {
+			keyCodes[input] = false;
+		}
+	}
+}
+
 // --------------------------------------------------------
 // Initializes the matrices necessary to represent our geometry's
 // transformations and our 3D camera
@@ -139,11 +180,10 @@ void Game::LoadShaders()
 void Game::CreateMatrices()
 {
 	// Initial updates to create the matrices.
-	
+	camera.GetTransform().SetPosition(XMFLOAT3(0.0f, 0.0f, -5.0f)); // Absolutely move camera back.
 	camera.UpdateViewMatrix();
 	camera.UpdateProjectionMatrix();
-
-	
+		
 	// Set up world matrix
 	// - In an actual game, each object will need one of these and they should
 	//    update when/if the object moves (every frame)
@@ -160,23 +200,23 @@ void Game::CreateMatrices()
 	//    camera and the direction vector along which to look (as well as "up")
 	// - Another option is the LOOK AT function, to look towards a specific
 	//    point in 3D space
-	XMVECTOR pos = XMVectorSet(0, 0, -5, 0);
-	XMVECTOR dir = XMVectorSet(0, 0, 1, 0);
-	XMVECTOR up = XMVectorSet(0, 1, 0, 0);
-	XMMATRIX V = XMMatrixLookToLH(
-		pos,     // The position of the "camera"
-		dir,     // Direction the camera is looking
-		up);     // "Up" direction in 3D space (prevents roll)
+	// XMVECTOR pos = XMVectorSet(0, 0, -5, 0);
+	// XMVECTOR dir = XMVectorSet(0, 0, 1, 0);
+	// XMVECTOR up = XMVectorSet(0, 1, 0, 0);
+	// XMMATRIX V = XMMatrixLookToLH(
+	// 	pos,     // The position of the "camera"
+	// 	dir,     // Direction the camera is looking
+	// 	up);     // "Up" direction in 3D space (prevents roll)
 	// XMStoreFloat4x4(&viewMatrix, XMMatrixTranspose(V)); // Transpose for HLSL!
 
 	// Create the Projection matrix
 	// - This should match the window's aspect ratio, and also update anytime
 	//    the window resizes (which is already happening in OnResize() below)
-	XMMATRIX P = XMMatrixPerspectiveFovLH(
-		0.25f * 3.1415926535f,		// Field of View Angle
-		(float)width / height,		// Aspect ratio
-		0.1f,						// Near clip plane distance
-		100.0f);					// Far clip plane distance
+	// XMMATRIX P = XMMatrixPerspectiveFovLH(
+	// 	0.25f * 3.1415926535f,		// Field of View Angle
+	// 	(float)width / height,		// Aspect ratio
+	// 	0.1f,						// Near clip plane distance
+	// 	100.0f);					// Far clip plane distance
 	// XMStoreFloat4x4(&projectionMatrix, XMMatrixTranspose(P)); // Transpose for HLSL!
 	
 }
@@ -366,7 +406,7 @@ void Game::OnResize()
 	DXCore::OnResize();
 
 	// Update the camera size.
-	// this->camera.SetDimensions((float) width, (float) height); // Updates the aspect ratio and updates the projection matrix.
+	this->camera.SetDimensions((float) width, (float) height); // Updates the aspect ratio and updates the projection matrix.
 
 	// ORIGINAL: Update our projection matrix since the window size changed
 	/* XMMATRIX P = XMMatrixPerspectiveFovLH(
@@ -385,6 +425,123 @@ void Game::Update(float deltaTime, float totalTime)
 	// Quit if the escape key is pressed
 	if (GetAsyncKeyState(VK_ESCAPE)) { Quit(); }
 
+	// No input on this frame flag.
+	bool keyPressed = false;
+
+	// Update key input states.
+	for (auto const& keys : keyCodes) 
+	{
+		// Get the input string.
+		std::string input = keys.first;
+
+		// If input key is zero-length string, continue.
+		if (input.length() == 0) { continue; }
+		
+		// Update states.
+		// Handle special cases.
+		if (input == "SPACEBAR") 
+		{
+			keyCodes[input] = GetAsyncKeyState(VK_SPACE);
+			keyPressed = true;
+		}
+		else
+		{
+			// Placeholder value.
+			bool check = true;
+
+			// Each character must be valid in order for check to succeed.
+			for (int i = 0; i < input.length(); i++) 
+			{
+				check = check && (GetAsyncKeyState(input[i]) & 0x8000);
+			}
+
+			keyCodes[input] = check;
+			keyPressed = check ? true : keyPressed;
+		}	
+	}
+
+	// Prepare changing values.
+	XMFLOAT3 targetPosition(0.0f, 0.0f, 0.0f);
+
+	// Set up skip if no key pressed.
+	if (keyPressed)
+	{
+		bool rotationModifier = keyCodes[keyMap[ACTION::MODIFIER_ROTATE]];
+
+		// Check for keyboard input.
+		for (auto const& mapping : keyMap)
+		{
+			// Get the key and the associated value.
+			ACTION key = mapping.first;
+			std::string input = mapping.second;
+			bool keyDown = keyCodes[input];
+
+			// If a key has been pressed.
+			if (keyDown)
+			{
+				// Switch actions based on modifiers.
+				if (rotationModifier) 
+				{
+					switch (key)
+					{
+						// Rotation.
+					case ACTION::CAMERA_TURN_LEFT:
+						printf("Camera > Turn > Left [%s] \n", input.c_str());
+						break;
+					case ACTION::CAMERA_TURN_RIGHT:
+						printf("Camera > Turn > Right [%s] \n", input.c_str());
+						break;
+					case ACTION::CAMERA_PITCH_UP:
+						printf("Camera > Pitch > Up [%s] \n", input.c_str());
+						break;
+					case ACTION::CAMERA_PITCH_DOWN:
+						printf("Camera > Pitch > Down [%s] \n", input.c_str());
+						break;
+					case ACTION::CAMERA_ROLL_LEFT:
+						printf("Camera > Roll > Left [%s] \n", input.c_str());
+						break;
+					case ACTION::CAMERA_ROLL_RIGHT:
+						printf("Camera > Roll > Right [%s] \n", input.c_str());
+						break;
+					case ACTION::MODIFIER_ROTATE:
+						printf("Rotation Modifier [%s] \n", input.c_str());
+					}
+				}
+				else
+				{
+					switch (key)
+					{
+						// Movement.
+					case ACTION::CAMERA_MOVE_UP:
+						printf("Camera > Move > Up [%s] \n", input.c_str());
+						break;
+					case ACTION::CAMERA_MOVE_DOWN:
+						printf("Camera > Move > Down [%s] \n", input.c_str());
+						break;
+					case ACTION::CAMERA_MOVE_FORWARD:
+						printf("Camera > Move > Forward [%s] \n", input.c_str());
+						break;
+					case ACTION::CAMERA_MOVE_BACKWARD:
+						printf("Camera > Move > Backward [%s] \n", input.c_str());
+						break;
+					case ACTION::CAMERA_MOVE_LEFT:
+						printf("Camera > Move > Left [%s] \n", input.c_str());
+						break;
+					case ACTION::CAMERA_MOVE_RIGHT:
+						printf("Camera > Move > Right [%s] \n", input.c_str());
+						break;
+					}
+				}
+			}
+
+		}
+	}
+
+	// Update the entities.
+
+	// Update the camera.
+
+	/*
 	float scaleMagnitude = 2.0f * deltaTime;
 	float magnitude = 5.0f * deltaTime;
 	float x = 0.0f, y = 0.0f, z = 0.0f;
@@ -471,18 +628,26 @@ void Game::Update(float deltaTime, float totalTime)
 		}
 	}
 
-
-
 	// Update each of the entities.
 	for (int i = 0; i < gameEntityCount; i++)
 	{
-		gameEntities[i]->Move(x, y, z);
-		gameEntities[i]->Scale(deltaScale, deltaScale, deltaScale);
-		gameEntities[i]->Rotate(pitchY, yawX, rollZ);
-		gameEntities[i]->Update(deltaTime, totalTime);
+		// gameEntities[i]->Move(x, y, z);
+		// gameEntities[i]->Scale(deltaScale, deltaScale, deltaScale);
+		// gameEntities[i]->Rotate(pitchY, yawX, rollZ);
+		// gameEntities[i]->Update(deltaTime, totalTime);
 		// printf("Entity[%d] Position: < %4.2f, %4.2f > \n", i, gameEntities[i]->GetPosition().x, gameEntities[i]->GetPosition().y);
 	}
 	// printf("\n");
+
+	// Update camera rotation and movement.
+	// float secondsPerCycle = 10;
+	// float degree = 360.0f / secondsPerCycle;
+	// float angle = degree * (float)(PI / 180.0f);
+
+	// camera.UpdatePosition(deltaTime, deltaScale, XMFLOAT3(0.0f, 0.0f, -5.0f));
+	// camera.UpdateRotation(deltaTime, deltaScale, XMFLOAT3(0.0f, 0.0f, 0.0f)); 
+	*/
+
 }
 
 // --------------------------------------------------------
@@ -517,10 +682,10 @@ void Game::Draw(float deltaTime, float totalTime)
 		// For each frame.
 		// - set matrices.
 		vertexShader->SetMatrix4x4("world", entityWorldMatrix);
-		vertexShader->SetMatrix4x4("view", viewMatrix);
-		vertexShader->SetMatrix4x4("projection", projectionMatrix);
-		// vertexShader->SetMatrix4x4("view", camera.GetViewMatrix());
-		// vertexShader->SetMatrix4x4("projection", camera.GetProjectionMatrix());
+		// vertexShader->SetMatrix4x4("view", viewMatrix);
+		// vertexShader->SetMatrix4x4("projection", projectionMatrix);
+		vertexShader->SetMatrix4x4("view", camera.GetViewMatrix());
+		vertexShader->SetMatrix4x4("projection", camera.GetProjectionMatrix());
 
 		// Send buffer data to the vertex shader.
 		vertexShader->CopyAllBufferData();

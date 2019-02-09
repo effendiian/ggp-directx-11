@@ -281,6 +281,7 @@ void swap(TransformDescription& lhs, TransformDescription& rhs)
 	
 	// Swap the members.
 	swap(lhs.heading, rhs.heading);
+	swap(lhs.up, rhs.up);
 	swap(lhs.position_start, rhs.position_start);
 	swap(lhs.position, rhs.position);
 	swap(lhs.orientation_start, rhs.orientation_start);
@@ -319,10 +320,12 @@ TransformDescription::TransformDescription(
 	XMFLOAT3 _position,
 	XMFLOAT3 _rotation)
 	: heading{ UnitVector::GetDefaultForward() },
+	up{ UnitVector::GetDefaultUp() },
 	position_start(_position), position(_position),
 	orientation_start(_rotation), orientation(_rotation)
 {
 	this->CalculateHeading();
+	this->CalculateUp();
 }
 
 /// <summary>
@@ -365,6 +368,7 @@ TransformDescription::TransformDescription(const TransformDescription& other)
 {
 	// Assign member data.
 	this->heading = other.heading;
+	this->up = other.up;
 	this->position_start = other.position_start;
 	this->position = other.position;
 	this->orientation_start = other.orientation_start;
@@ -486,6 +490,24 @@ void TransformDescription::GetHeading(XMFLOAT3& target) const
 	target = XMFLOAT3(heading.Get());
 }
 
+/// <summary>
+/// Gets the current up direction.
+/// </summary>
+/// <param name="target">The target.</param>
+XMFLOAT3 TransformDescription::GetUp() const
+{
+	return this->up.Get();
+}
+
+/// <summary>
+/// Gets the current up direction.
+/// </summary>
+/// <param name="target">The target.</param>
+void TransformDescription::GetUp(XMFLOAT3& target) const
+{
+	target = XMFLOAT3(up.Get());
+}
+
 
 // ---------------------
 // Mutators.
@@ -521,6 +543,7 @@ void TransformDescription::Rotate(DirectX::XMFLOAT3 delta)
 	orientation.y += delta.y;
 	orientation.z += delta.z;
 	CalculateHeading();
+	CalculateUp();
 }
 
 /// <summary>
@@ -540,6 +563,7 @@ void TransformDescription::SetRotation(XMFLOAT3 absolute)
 {
 	orientation = XMFLOAT3(absolute);
 	CalculateHeading();
+	CalculateUp();
 }
 
 // -------------
@@ -609,6 +633,7 @@ void TransformDescription::UpdateRotation(
 		}
 
 		CalculateHeading();
+		CalculateUp();
 	}
 }
 
@@ -646,6 +671,32 @@ void TransformDescription::CalculateHeading()
 	this->heading.Set(direction_safe);
 }
 
+/// <summary>
+/// Calculates the up vector.
+/// </summary>
+void TransformDescription::CalculateUp()
+{
+	// Get default Up (Y) vector.
+	XMFLOAT3 global_up_safe = UnitVector::GetDefaultUp().Get();
+	XMVECTOR global_up = XMLoadFloat3(&global_up_safe);
+
+	// Get the current orientation as a quaternion. Pitch(y), Yaw(x), Roll(z)
+	XMVECTOR rotation = XMQuaternionRotationRollPitchYaw(
+		this->orientation.y,
+		this->orientation.x,
+		this->orientation.z
+	);
+
+	// Apply current orientation to forward default.
+	XMVECTOR relative_up = XMVector3Rotate(global_up, rotation);
+
+	// Store the direction in a safe format.
+	XMFLOAT3 relative_up_safe;
+	XMStoreFloat3(&relative_up_safe, relative_up);
+
+	// Store the calculated result.
+	this->up.Set(relative_up_safe);
+}
 #pragma endregion
 
 #pragma region CameraOptions - Camera settings.
@@ -1195,7 +1246,7 @@ void Camera::UpdateViewMatrix()
 /// </summary>
 void Camera::UpdateProjectionMatrix()
 {
-	this->projection = CalculateViewMatrix();
+	this->projection = CalculateProjectionMatrix();
 }
 
 /// <summary>
@@ -1333,12 +1384,12 @@ XMFLOAT4X4 Camera::CalculateViewMatrix()
 	// Get view matrix data.
 	XMFLOAT3 p = this->GetCurrentPosition();
 	XMFLOAT3 d = this->transform.GetHeading();
-	UnitVector u = UnitVector::GetDefaultUp();
+	XMFLOAT3 u = this->transform.GetUp();
 
 	// Convert the values.
 	XMVECTOR POS = XMVectorSet(p.x, p.y, p.z, 0.0f);
 	XMVECTOR DIR = XMVectorSet(d.x, d.y, d.z, 0.0f);
-	XMVECTOR UP = XMVectorSet(u.Get(0), u.Get(1), u.Get(2), 0.0f);
+	XMVECTOR UP = XMVectorSet(u.x, u.y, u.z, 0.0f);
 
 	// Calculate the matrix.
 	XMMATRIX VIEW = XMMatrixLookToLH(
@@ -1363,16 +1414,16 @@ XMFLOAT4X4 Camera::CalculateProjectionMatrix()
 {
 	// Projection matrix values.
 	float fov = this->settings.GetFieldOfView();
-	float ratio = this->settings.GetAspectRatio();
-	float near = this->settings.GetNearClippingPlane();
-	float far = this->settings.GetFarClippingPlane();
+	float aspectRatio = this->settings.GetAspectRatio();
+	float nearPlane = this->settings.GetNearClippingPlane();
+	float farPlane = this->settings.GetFarClippingPlane();
 
 	// Calculation of the projection matrix with most recent changes.
 	XMMATRIX PROJ = XMMatrixPerspectiveFovLH(
 		fov,
-		ratio,
-		near,
-		far
+		aspectRatio,
+		nearPlane,
+		farPlane
 	);
 
 	// Store as transposed matrix.

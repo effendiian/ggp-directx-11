@@ -394,7 +394,7 @@ void GameEntity::Update(float deltaTime, float totalTime)
 	float x = magnitude * cosf(totalTime);
 	float y = magnitude * -sinf(totalTime);
 	float z = 0.0f;
-	this->Move(x, y, z);
+	// this->Move(x, y, z);
 	// printf("Move( %4.3f, %4.3f, %4.3f ) \n", x, y, z);
 
 	// Scale in pulsing fashion.
@@ -406,7 +406,7 @@ void GameEntity::Update(float deltaTime, float totalTime)
 	float rX = 0.314f * cosf(deltaTime) * 0.01f;
 	float rY = 0.314f * -sinf(deltaTime) * 0.01f;
 	float rZ = 0.314f * sinf(deltaTime) * 0.01f; // speed of 1 rads per second.
-	this->Rotate(rX, rY, rZ);
+	// this->Rotate(rX, rY, rZ);
 	// printf("Radians ( %4.3f ) \n", radians);
 
 	// Handle transformations.

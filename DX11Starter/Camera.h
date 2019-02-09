@@ -10,6 +10,8 @@
 // Aiding structures.
 // ------------------------------------
 
+const float PI = 3.1415926535f; // Rounded PI value.
+
 /// <summary>
 /// Contains options for Camera objects.
 /// </summary>
@@ -21,7 +23,6 @@ public:
 	// Static methods.
 
 	static CameraOptions GetDefaultCameraOptions();
-	const float PI = 3.1415926535f; // Rounded PI value.
 
 	// --------------------
 	// Friend methods.
@@ -192,6 +193,9 @@ struct TransformDescription {
 	DirectX::XMFLOAT3 GetCurrentOrientation() const;
 	void GetCurrentOrientation(DirectX::XMFLOAT3& target) const;
 
+	DirectX::XMFLOAT3 GetUp() const;
+	void GetUp(DirectX::XMFLOAT3& target) const;
+
 	DirectX::XMFLOAT3 GetHeading() const;
 	void GetHeading(DirectX::XMFLOAT3& target) const;
 
@@ -217,6 +221,7 @@ private:
 	// -------------
 	// Data members.
 
+	UnitVector up; // Up vector.
 	UnitVector heading; // Forward vector.
 	DirectX::XMFLOAT3 position_start; // Starting position in local space.
 	DirectX::XMFLOAT3 position; // Position of user camera in local space.
@@ -227,6 +232,7 @@ private:
 	// Helper members.
 
 	void CalculateHeading();
+	void CalculateUp();
 
 };
 

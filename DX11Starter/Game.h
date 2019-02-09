@@ -8,10 +8,34 @@
 #include "Camera.h"
 #include <DirectXMath.h>
 #include <vector>
+#include <map>
+#include <string.h>
 
 class Game
 	: public DXCore
 {
+
+	// Key Input enum.
+	typedef enum _ACTION {
+		// Camera Movement.
+		CAMERA_MOVE_UP,
+		CAMERA_MOVE_DOWN,
+		CAMERA_MOVE_FORWARD,
+		CAMERA_MOVE_BACKWARD,
+		CAMERA_MOVE_LEFT,
+		CAMERA_MOVE_RIGHT,
+
+		// Camera Rotation.
+		CAMERA_PITCH_UP,
+		CAMERA_PITCH_DOWN,
+		CAMERA_TURN_LEFT, // Yaw
+		CAMERA_TURN_RIGHT, // Yaw
+		CAMERA_ROLL_LEFT,
+		CAMERA_ROLL_RIGHT,
+
+		// Key determines if rotation modifier has been selected.
+		MODIFIER_ROTATE
+	} ACTION;
 
 	// data.
 	typedef DirectX::XMFLOAT4 fColor;
@@ -24,7 +48,9 @@ class Game
 	typedef std::vector<DirectX::XMFLOAT4> ColorCollection;
 	typedef std::vector<GameEntity::MeshReference> MeshCollection;
 	typedef GameEntity::GameEntityCollection GameEntityCollection;
-
+	
+	typedef std::map<ACTION, std::string> KeyMappings;
+	typedef std::map<std::string, bool> KeyCodes;
 
 public:
 	Game(HINSTANCE hInstance);
@@ -46,6 +72,7 @@ private:
 
 	// Initialization helper methods - feel free to customize, combine, etc.
 	void LoadShaders();
+	void CreateInput();
 	void CreateMatrices();
 	void CreateBasicGeometry();
 	void CreateEntities();
@@ -64,11 +91,15 @@ private:
 
 	// The camera.
 	Camera camera;
+	
+	// Key mappings.
+	KeyMappings keyMap;
+	KeyCodes keyCodes;
 
 	// The matrices to go from model space to screen space
 	// DirectX::XMFLOAT4X4 worldMatrix;
-	DirectX::XMFLOAT4X4 viewMatrix;
-	DirectX::XMFLOAT4X4 projectionMatrix;
+	// DirectX::XMFLOAT4X4 viewMatrix;
+	// DirectX::XMFLOAT4X4 projectionMatrix;
 
 	// Keeps track of the old mouse position.  Useful for
 	// determining how far the mouse moved in a single frame.
