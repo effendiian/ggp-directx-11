@@ -213,6 +213,8 @@ struct TransformDescription {
 	// Service methods.
 
 	void Reset();
+	void UpdatePosition(DirectX::XMFLOAT3 speed, bool isRelative = true); // Relative translation.
+	void UpdateRotation(DirectX::XMFLOAT3 speed, bool isRelative = true); // Relative rotation.
 	void UpdatePosition(float deltaTime, float totalTime, DirectX::XMFLOAT3 speed, bool isRelative = true); // Relative translation.
 	void UpdateRotation(float deltaTime, float totalTime, DirectX::XMFLOAT3 speed, bool isRelative = true); // Relative rotation.
 
@@ -234,6 +236,93 @@ private:
 	void CalculateHeading();
 	void CalculateUp();
 
+};
+
+/// <summary>
+/// Wrapper for tracking mouse state.
+/// </summary>
+struct MouseTracker {
+public:
+	
+	// ------------------------------------
+	// Friend methods.
+	// ------------------------------------
+
+	friend void swap(MouseTracker& lhs, MouseTracker& rhs);
+	
+	template <typename T>
+	friend T clamp(const T& n, const T& low, const T& high);
+
+	template <typename T>
+	friend T range(const T& n, const T& originalLow, const T& originalHigh, const T& newLow, const T& newHigh);
+
+	// ------------------------------------
+	// Constructor(s).
+	// ------------------------------------
+
+	MouseTracker();
+	MouseTracker(const MouseTracker& other);
+	MouseTracker(MouseTracker&& other) noexcept;
+	MouseTracker& operator=(MouseTracker other);
+
+	// ------------------------------------
+	// Accessors.
+	// ------------------------------------
+
+	bool GetPreviousButtonState() const;
+	const DirectX::XMFLOAT2& GetPreviousMousePosition() const;
+
+	bool GetCurrentButtonState() const;
+	const DirectX::XMFLOAT2& GetCurrentMousePosition() const;
+
+	DirectX::XMFLOAT2 GetRawDelta() const;
+	float GetRawHorizontalDelta() const;
+	float GetRawVerticalDelta() const;
+
+	DirectX::XMFLOAT2 GetDelta(DirectX::XMFLOAT2 _min, DirectX::XMFLOAT2 _max) const;
+	float GetHorizontalDelta(float _min, float _max) const;
+	float GetVerticalDelta(float _min, float _max) const;
+
+	// ------------------------------------
+	// Service methods.
+	// ------------------------------------
+
+	void Update(bool _currentState, DirectX::XMFLOAT2 _currentPosition);
+	void Update(bool _currentState, float _mouseX, float _mouseY);
+
+private:
+
+	// ------------------------------------
+	// Data members.
+	// ------------------------------------
+
+	bool previousButtonState;
+	bool currentButtonState;
+	DirectX::XMFLOAT2 previousMousePosition;
+	DirectX::XMFLOAT2 currentMousePosition;
+
+	// ------------------------------------
+	// Accessors.
+	// ------------------------------------
+
+
+	// ------------------------------------
+	// Mutators.
+	// ------------------------------------
+
+	void SetPreviousButtonState(bool _state);
+	void SetPreviousMousePosition(DirectX::XMFLOAT2 _position);
+
+	void SetCurrentButtonState(bool _state);
+	void SetCurrentMousePosition(DirectX::XMFLOAT2 _position);
+
+	// ------------------------------------
+	// Helper methods.
+	// ------------------------------------
+
+	DirectX::XMFLOAT2 CalculateDelta() const;
+	float CalculateDeltaHorizontal() const;
+	float CalculateDeltaVertical() const;
 };
 
 // ------------------------------------
@@ -301,6 +390,9 @@ public:
 	TransformDescription GetTransform() const;
 	void GetTransform(TransformDescription& target) const;
 
+	const MouseTracker& GetMouseTracker() const;
+	void GetMouseTracker(MouseTracker& target) const;
+
 	// ------------------------------------
 	// Mutators.
 	// ------------------------------------
@@ -313,12 +405,16 @@ public:
 	// Service methods.
 	// ------------------------------------
 
+	void Reset();
+	void UpdateMouse(bool _currentState, float _mouseX, float _mouseY);
+	void UpdatePosition(DirectX::XMFLOAT3 speed, bool isRelative = true); // Relative translation.
+	void UpdateRotation(DirectX::XMFLOAT3 speed, bool isRelative = true); // Relative rotation.
 	void UpdatePosition(float deltaTime, float totalTime, DirectX::XMFLOAT3 speed, bool isRelative = true); // Relative translation.
 	void UpdateRotation(float deltaTime, float totalTime, DirectX::XMFLOAT3 speed, bool isRelative = true); // Relative rotation.
 
 	void UpdateViewMatrix();
 	void UpdateProjectionMatrix();
-
+	
 	void CalculateViewMatrix(DirectX::XMFLOAT4X4& target);
 	void CalculateProjectionMatrix(DirectX::XMFLOAT4X4& target);
 
@@ -328,6 +424,7 @@ private:
 	// Data members.
 	// ------------------------------------
 
+	MouseTracker tracker; // Tracks mouse movement.
 	TransformDescription transform; // Contains position/orientation information.
 	CameraOptions settings; // Contains the settings for the camera object.
 	DirectX::XMFLOAT4X4 view; // Stores the view matrix.

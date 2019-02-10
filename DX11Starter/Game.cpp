@@ -29,12 +29,13 @@ Game::Game(HINSTANCE hInstance)
 	// Initialize shaders.
 	vertexShader = 0;
 	pixelShader = 0;
+	sharedMaterial = 0;
 
 	// Initialize
 	// worldMatrix = XMFLOAT4X4();
 	// viewMatrix = XMFLOAT4X4();
 	// projectionMatrix = XMFLOAT4X4();
-	camera = Camera(); // Default camera settings.
+	camera = Camera(CameraOptions::GetDefaultCameraOptions(), XMFLOAT3(0.0f, 0.0f, -5.0f)); // Default camera settings.
 	prevMousePos = POINT();
 
 	// Initialize the key mapping.
@@ -98,6 +99,7 @@ Game::~Game()
 
 	// Delete our simple shader objects, which
 	// will clean up their own internal DirectX stuff
+	delete sharedMaterial;
 	delete vertexShader;
 	delete pixelShader;
 }
@@ -158,6 +160,7 @@ void Game::CreateInput()
 	keyMap[ACTION::CAMERA_ROLL_RIGHT] = "RD";
 
 	keyMap[ACTION::MODIFIER_ROTATE] = "R";
+	keyMap[ACTION::MODIFIER_RESET] = "TAB";
 
 	// Assign codes by looping through the mappings.
 	for (auto const& mapping : keyMap)
@@ -220,7 +223,6 @@ void Game::CreateMatrices()
 	// XMStoreFloat4x4(&projectionMatrix, XMMatrixTranspose(P)); // Transpose for HLSL!
 	
 }
-
 
 // --------------------------------------------------------
 // Creates the geometry we're going to draw - a single triangle for now
@@ -356,6 +358,9 @@ void Game::CreateEntities() {
 	// Create entity collection.
 	gameEntities = GameEntityCollection();
 
+	// Create material.
+	sharedMaterial = new Material(*vertexShader, *pixelShader);
+
 	// Cycle through meshes, until entity count is fulfilled.
 	int meshID = -1;
 	for (int i = 0; i < gameEntityCount; i++)
@@ -382,7 +387,7 @@ void Game::CreateEntities() {
 		XMFLOAT3 scale = GameEntity::GetRandomTransform(0.1f, 0.2f);
 
 		// Create an entity with the appropriate mesh.
-		pUniqueGameEntity entity(new GameEntity(mesh,
+		pUniqueGameEntity entity(new GameEntity(*sharedMaterial, mesh,
 			position.x, position.y, position.z,
 			scale.x, scale.y, scale.z)
 		);
@@ -444,6 +449,11 @@ void Game::Update(float deltaTime, float totalTime)
 			keyCodes[input] = GetAsyncKeyState(VK_SPACE);
 			keyPressed = true;
 		}
+		else if (input == "TAB") 
+		{
+			keyCodes[input] = GetAsyncKeyState(VK_TAB);
+			keyPressed = true;
+		}
 		else
 		{
 			// Placeholder value.
@@ -459,9 +469,20 @@ void Game::Update(float deltaTime, float totalTime)
 			keyPressed = check ? true : keyPressed;
 		}	
 	}
+	
+	// Calculate the speed.
+	float speed = 5.0f;
+	float deltaSpeed = speed * deltaTime;
+
+	// Update camera rotation and movement.
+	float secondsPerRotation = 5.0f;
+	float angularSpeedInDegrees = 360.0f / secondsPerRotation;
+	float angularSpeedInRadians = angularSpeedInDegrees * (float)(PI / 180.0f);
+	float deltaRadians = angularSpeedInRadians * deltaTime;
 
 	// Prepare changing values.
-	XMFLOAT3 targetPosition(0.0f, 0.0f, 0.0f);
+	XMFLOAT3 cam_deltaPosition(0.0f, 0.0f, 0.0f); // Initialize value for camera movement.
+	XMFLOAT3 cam_deltaRotation(0.0f, 0.0f, 0.0f); // Initialize value for camera rotation.
 
 	// Set up skip if no key pressed.
 	if (keyPressed)
@@ -479,58 +500,172 @@ void Game::Update(float deltaTime, float totalTime)
 			// If a key has been pressed.
 			if (keyDown)
 			{
-				// Switch actions based on modifiers.
-				if (rotationModifier) 
+				if (key == ACTION::MODIFIER_RESET)
 				{
-					switch (key)
-					{
-						// Rotation.
-					case ACTION::CAMERA_TURN_LEFT:
-						printf("Camera > Turn > Left [%s] \n", input.c_str());
-						break;
-					case ACTION::CAMERA_TURN_RIGHT:
-						printf("Camera > Turn > Right [%s] \n", input.c_str());
-						break;
-					case ACTION::CAMERA_PITCH_UP:
-						printf("Camera > Pitch > Up [%s] \n", input.c_str());
-						break;
-					case ACTION::CAMERA_PITCH_DOWN:
-						printf("Camera > Pitch > Down [%s] \n", input.c_str());
-						break;
-					case ACTION::CAMERA_ROLL_LEFT:
-						printf("Camera > Roll > Left [%s] \n", input.c_str());
-						break;
-					case ACTION::CAMERA_ROLL_RIGHT:
-						printf("Camera > Roll > Right [%s] \n", input.c_str());
-						break;
-					case ACTION::MODIFIER_ROTATE:
-						printf("Rotation Modifier [%s] \n", input.c_str());
-					}
+					printf("Camera > Reset [%s] \n", input.c_str());
+					camera.Reset();
 				}
-				else
+				else 
 				{
-					switch (key)
+					// Switch actions based on modifiers.
+					if (rotationModifier) 
 					{
-						// Movement.
-					case ACTION::CAMERA_MOVE_UP:
-						printf("Camera > Move > Up [%s] \n", input.c_str());
-						break;
-					case ACTION::CAMERA_MOVE_DOWN:
-						printf("Camera > Move > Down [%s] \n", input.c_str());
-						break;
-					case ACTION::CAMERA_MOVE_FORWARD:
-						printf("Camera > Move > Forward [%s] \n", input.c_str());
-						break;
-					case ACTION::CAMERA_MOVE_BACKWARD:
-						printf("Camera > Move > Backward [%s] \n", input.c_str());
-						break;
-					case ACTION::CAMERA_MOVE_LEFT:
-						printf("Camera > Move > Left [%s] \n", input.c_str());
-						break;
-					case ACTION::CAMERA_MOVE_RIGHT:
-						printf("Camera > Move > Right [%s] \n", input.c_str());
-						break;
+						/* CAMERA ROTATION */
+						switch (key)
+						{
+							// Rotation.
+						case ACTION::CAMERA_TURN_RIGHT:
+							printf("Camera > Turn > Right [%s] \n", input.c_str());
+							cam_deltaRotation.x += deltaRadians;
+							break;
+						case ACTION::CAMERA_TURN_LEFT:
+							printf("Camera > Turn > Left [%s] \n", input.c_str());
+							cam_deltaRotation.x -= deltaRadians;
+							break;
+						case ACTION::CAMERA_PITCH_UP:
+							printf("Camera > Pitch > Up [%s] \n", input.c_str());
+							cam_deltaRotation.y -= deltaRadians;
+							break;
+						case ACTION::CAMERA_PITCH_DOWN:
+							printf("Camera > Pitch > Down [%s] \n", input.c_str());
+							cam_deltaRotation.y += deltaRadians;
+							break;
+						case ACTION::CAMERA_ROLL_RIGHT:
+							printf("Camera > Roll > Right [%s] \n", input.c_str());
+							cam_deltaRotation.z -= deltaRadians;
+							break;
+						case ACTION::CAMERA_ROLL_LEFT:
+							printf("Camera > Roll > Left [%s] \n", input.c_str());
+							cam_deltaRotation.z += deltaRadians;
+							break;
+						case ACTION::MODIFIER_ROTATE:
+							printf("Rotation Modifier [%s] \n", input.c_str());
+						}
 					}
+					else
+					{
+						/* CAMERA MOVEMENT */
+						switch (key)
+						{
+							// Rotation.
+						case ACTION::CAMERA_TURN_RIGHT:
+							printf("Camera > Turn > Right [%s] \n", input.c_str());
+							cam_deltaRotation.x += deltaRadians;
+							break;
+						case ACTION::CAMERA_TURN_LEFT:
+							printf("Camera > Turn > Left [%s] \n", input.c_str());
+							cam_deltaRotation.x -= deltaRadians;
+							break;
+
+							// Movement.
+						case ACTION::CAMERA_MOVE_UP:
+							printf("Camera > Move > Up [%s] \n", input.c_str());
+							cam_deltaPosition.y += deltaSpeed; // Movement regardless of position.
+							break;
+						case ACTION::CAMERA_MOVE_DOWN:
+							printf("Camera > Move > Down [%s] \n", input.c_str());
+							cam_deltaPosition.y -= deltaSpeed; // Movement regardless of position.
+							break;
+						case ACTION::CAMERA_MOVE_FORWARD:
+							printf("Camera > Move > Forward [%s] \n", input.c_str());
+
+							{
+								// Get the current heading.
+								XMFLOAT3 forward_safe = camera.GetTransform().GetHeading();
+								forward_safe.x *= deltaSpeed;
+								forward_safe.y *= deltaSpeed;
+								forward_safe.z *= deltaSpeed;
+
+								// Add to change in position.
+								cam_deltaPosition.x += forward_safe.x;
+								cam_deltaPosition.y += forward_safe.y;
+								cam_deltaPosition.z += forward_safe.z;
+							}
+
+							break;
+						case ACTION::CAMERA_MOVE_BACKWARD:
+							printf("Camera > Move > Backward [%s] \n", input.c_str());
+
+							{
+								// Get the current heading.
+								XMFLOAT3 backward_safe = camera.GetTransform().GetHeading();
+								backward_safe.x *= -deltaSpeed;
+								backward_safe.y *= -deltaSpeed;
+								backward_safe.z *= -deltaSpeed;
+
+								// Add to change in position.
+								cam_deltaPosition.x += backward_safe.x; // We still add, even if backward is negative, because the deltaSpeed is already negated above.
+								cam_deltaPosition.y += backward_safe.y; // We still add, even if backward is negative, because the deltaSpeed is already negated above.
+								cam_deltaPosition.z += backward_safe.z; // We still add, even if backward is negative, because the deltaSpeed is already negated above.
+							}
+
+							break;
+						case ACTION::CAMERA_MOVE_LEFT:
+							printf("Camera > Move > Left [%s] \n", input.c_str());
+
+							{
+								// Get the left vector.
+								XMFLOAT3 forward_safe = camera.GetTransform().GetHeading();
+								XMFLOAT3 global_up_safe = UnitVector::GetDefaultUp().Get();
+						
+								// Calculate the right vector.
+								XMVECTOR forward = XMLoadFloat3(&forward_safe);
+								XMVECTOR global_up = XMLoadFloat3(&global_up_safe);
+								XMVECTOR right_vector = XMVector3Cross(forward, global_up);
+						
+								// Store the vector.
+								XMFLOAT3 right_safe;
+								XMStoreFloat3(&right_safe, right_vector);
+
+								// Negate the vector for the left.
+								XMFLOAT3 left_safe(0.0f, 0.0f, 0.0f);
+								left_safe.x = (right_safe.x * deltaSpeed);
+								left_safe.y = (right_safe.y * deltaSpeed);
+								left_safe.z = (right_safe.z * deltaSpeed);
+
+								// Apply transformation to delta movement.
+								cam_deltaPosition.x += left_safe.x;
+								cam_deltaPosition.y += left_safe.y;
+								cam_deltaPosition.z += left_safe.z;
+							}
+
+							break;
+						case ACTION::CAMERA_MOVE_RIGHT:
+							printf("Camera > Move > Right [%s] \n", input.c_str());
+
+							{
+								// Get the right vector.
+								XMFLOAT3 forward_safe = camera.GetTransform().GetHeading();
+								XMFLOAT3 global_up_safe = UnitVector::GetDefaultUp().Get();
+
+								// Calculate the right vector.
+								XMVECTOR forward = XMLoadFloat3(&forward_safe);
+								XMVECTOR global_up = XMLoadFloat3(&global_up_safe);
+								XMVECTOR right_vector = XMVector3Cross(forward, global_up);
+
+								// Store the vector.
+								XMFLOAT3 right_safe;
+								XMStoreFloat3(&right_safe, right_vector);
+
+								// Scale the right vector.
+								right_safe.x *= -deltaSpeed;
+								right_safe.y *= -deltaSpeed;
+								right_safe.z *= -deltaSpeed;
+
+								// Apply transformation to delta movement.
+								cam_deltaPosition.x += right_safe.x;
+								cam_deltaPosition.y += right_safe.y;
+								cam_deltaPosition.z += right_safe.z;
+							}
+
+							break;
+						}
+					}
+			
+
+					// Update the camera.
+					camera.UpdatePosition(cam_deltaPosition);
+					camera.UpdateRotation(cam_deltaRotation);
 				}
 			}
 
@@ -538,8 +673,12 @@ void Game::Update(float deltaTime, float totalTime)
 	}
 
 	// Update the entities.
+	for (int i = 0; i < gameEntityCount; i++)
+	{
+		gameEntities[i]->Update(deltaTime, totalTime);
+	}
 
-	// Update the camera.
+
 
 	/*
 	float scaleMagnitude = 2.0f * deltaTime;
@@ -740,6 +879,7 @@ void Game::Draw(float deltaTime, float totalTime)
 void Game::OnMouseDown(WPARAM buttonState, int x, int y)
 {
 	// Add any custom code here...
+	camera.UpdateMouse((buttonState & 0x0001), (float)x, (float)y);
 
 	// Save the previous mouse position, so we have it for the future
 	prevMousePos.x = x;
@@ -757,6 +897,7 @@ void Game::OnMouseDown(WPARAM buttonState, int x, int y)
 void Game::OnMouseUp(WPARAM buttonState, int x, int y)
 {
 	// Add any custom code here...
+	camera.UpdateMouse((buttonState & 0x0001), (float)x, (float)y);
 
 	// We don't care about the tracking the cursor outside
 	// the window anymore (we're not dragging if the mouse is up)
@@ -771,6 +912,32 @@ void Game::OnMouseUp(WPARAM buttonState, int x, int y)
 void Game::OnMouseMove(WPARAM buttonState, int x, int y)
 {
 	// Add any custom code here...
+	camera.UpdateMouse((buttonState & 0x0001), (float)x, (float)y);
+
+	MouseTracker trackerWatch = camera.GetMouseTracker();
+	/* // if (trackerWatch.GetCurrentButtonState())
+	// {
+		printf("\n------------\n");
+		printf("Tracker Watch \n");
+		printf("|  Previous State [%s] \n", (trackerWatch.GetPreviousButtonState() ? "true" : "false"));
+		printf("|  Current State [%s] \n", (trackerWatch.GetCurrentButtonState() ? "true" : "false"));
+		printf("|  Previous Position [< %4.5f, %4.5f >] \n", trackerWatch.GetPreviousMousePosition().x, trackerWatch.GetPreviousMousePosition().y);
+		printf("|  Current Position [< %4.5f, %4.5f >] \n", trackerWatch.GetCurrentMousePosition().x, trackerWatch.GetCurrentMousePosition().y);
+		printf("|  Raw Delta [< %4.5f, %4.5f >] \n", trackerWatch.GetRawDelta().x, trackerWatch.GetRawDelta().y);
+		printf("|  Delta [< %4.5f, %4.5f >] \n", trackerWatch.GetDelta(XMFLOAT2(0.0f, 0.0f), XMFLOAT2(6.0f, 6.0f)).x, trackerWatch.GetDelta(XMFLOAT2(0.0f, 0.0f), XMFLOAT2(6.0f, 6.0f)).y);
+		printf("------------\n");
+	// } */
+
+	if (trackerWatch.GetCurrentButtonState()) 
+	{
+		// Get rotation.
+		float scale = 0.0025f;
+		XMFLOAT2 delta = trackerWatch.GetRawDelta();
+		XMFLOAT3 rotation = XMFLOAT3(delta.x * scale, delta.y * scale, 0.0f);
+
+		// Apply rotation.
+		camera.UpdateRotation(rotation);
+	}
 
 	// Save the previous mouse position, so we have it for the future
 	prevMousePos.x = x;

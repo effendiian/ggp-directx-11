@@ -34,6 +34,7 @@ class Game
 		CAMERA_ROLL_RIGHT,
 
 		// Key determines if rotation modifier has been selected.
+		MODIFIER_RESET,
 		MODIFIER_ROTATE
 	} ACTION;
 
@@ -88,6 +89,7 @@ private:
 	// Wrappers for DirectX shaders to provide simplified functionality
 	SimpleVertexShader* vertexShader;
 	SimplePixelShader* pixelShader;
+	Material* sharedMaterial;
 
 	// The camera.
 	Camera camera;

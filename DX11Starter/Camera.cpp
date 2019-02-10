@@ -5,10 +5,8 @@
 #include <stdexcept>
 #include <utility>
 #include <iterator>
+#include <algorithm>
 
-// --------------------------------------
-// Internal structures.
-// --------------------------------------
 using namespace DirectX;
 
 #pragma region UnitVector - Internal Camera structure.
@@ -581,6 +579,53 @@ void TransformDescription::Reset()
 /// <summary>
 /// Updates the position.
 /// </summary>
+/// <param name="speed">The speed.</param>
+/// <param name="isRelative">if set to <c>true</c> [is relative].</param>
+void TransformDescription::UpdatePosition(
+	XMFLOAT3 speed, bool isRelative /* = true */)
+{
+	if (speed.x + speed.y + speed.z != 0.0f) {
+		XMFLOAT3 delta = XMFLOAT3(speed);
+
+		if (!isRelative)
+		{
+			this->SetPosition(delta);
+		}
+		else
+		{
+			this->Translate(delta);
+		}
+	}
+}
+
+/// <summary>
+/// Updates the rotation.
+/// </summary>
+/// <param name="speed">The rotation speed.</param>
+/// <param name="isRelative">if set to <c>true</c> [is relative].</param>
+void TransformDescription::UpdateRotation(
+	XMFLOAT3 speed, bool isRelative /* = true */)
+{
+	if (speed.x + speed.y + speed.z != 0.0f) {
+		XMFLOAT3 delta = XMFLOAT3(speed);
+
+		if (!isRelative)
+		{
+			this->SetRotation(delta);
+		}
+		else
+		{
+			this->Rotate(delta);
+		}
+
+		CalculateHeading();
+		CalculateUp();
+	}
+}
+
+/// <summary>
+/// Updates the position.
+/// </summary>
 /// <param name="deltaTime">The delta time.</param>
 /// <param name="totalTime">The total time.</param>
 /// <param name="speed">The speed.</param>
@@ -956,6 +1001,331 @@ void CameraOptions::UpdateAspectRatio()
 
 #pragma endregion
 
+#pragma region MouseTracker - Captures horizontal/vertical deltas.
+
+// --------------------------------------
+// --------------------------------------
+// Public.
+// --------------------------------------
+// --------------------------------------
+
+// --------------------------------------
+// Friend methods.
+// --------------------------------------
+
+/// <summary>
+/// Swaps the specified LHS.
+/// </summary>
+/// <param name="lhs">The LHS.</param>
+/// <param name="rhs">The RHS.</param>
+void swap(MouseTracker& lhs, MouseTracker& rhs)
+{
+	using std::swap;
+
+	// Swap members.
+	swap(lhs.previousButtonState, rhs.previousButtonState);
+	swap(lhs.currentButtonState, rhs.currentButtonState);
+	swap(lhs.previousMousePosition, rhs.previousMousePosition);
+	swap(lhs.currentMousePosition, rhs.currentMousePosition);
+}
+
+
+/// <summary>
+/// Clamps the specified n.
+/// </summary>
+/// <param name="n">The n.</param>
+/// <param name="low">The low.</param>
+/// <param name="high">The high.</param>
+/// <returns>Returns clamped value.</returns>
+template <typename T>
+T clamp(const T& n, const T& low, const T& high) 
+{
+	return std::max(low, std::min(n, high));
+}
+
+//// <summary>
+/// Clamps the specified n.
+/// </summary>
+/// <param name="n">The n.</param>
+/// <param name="originalLow">The original low.</param>
+/// <param name="originalHigh">The original high.</param>
+/// <param name="newLow">The new low.</param>
+/// <param name="newHigh">The new high.</param>
+/// <returns>Returns value within given range.</returns>
+template <typename T>
+T range(const T& n, const T& originalLow, const T& originalHigh, const T& newLow, const T& newHigh) 
+{
+	T slope = (newHigh - newLow) / (originalHigh - originalLow);
+	return newLow + floor(slope * (n - originalLow) + 0.5f);
+}
+
+// --------------------------------------
+// Constructor(s).
+// --------------------------------------
+
+/// <summary>
+/// Constructs the MouseTracker.
+/// </summary>
+MouseTracker::MouseTracker()
+	: previousButtonState{ false },
+	currentButtonState{ false },
+	previousMousePosition(0.0f, 0.0f),
+	currentMousePosition(0.0f, 0.0f) {}
+
+/// <summary>
+/// Initializes a new instance of the <see cref="MouseTracker"/> struct.
+/// </summary>
+/// <param name="other">The other.</param>
+MouseTracker::MouseTracker(const MouseTracker& other) 
+{
+	// Copy member data.
+	this->previousButtonState = other.previousButtonState;
+	this->currentButtonState = other.currentButtonState;
+	this->previousMousePosition = other.previousMousePosition;
+	this->currentMousePosition = other.currentMousePosition;
+}
+
+/// <summary>
+/// Initializes a new instance of the <see cref="MouseTracker"/> struct.
+/// </summary>
+/// <param name="other">The other.</param>
+MouseTracker::MouseTracker(MouseTracker&& other) noexcept
+	: MouseTracker() // Initialize.
+{
+	swap(*this, other);
+}
+
+/// <summary>
+/// Unified copy and move assignment constructor.
+/// </summary>
+/// <param name="other">The other.</param>
+/// <returns>Returns reference to the MouseTracker.</returns>
+MouseTracker& MouseTracker::operator=(MouseTracker other)
+{
+	swap(*this, other);
+	return *this;
+}
+
+// --------------------------------------
+// Accessors.
+// --------------------------------------
+
+/// <summary>
+/// Gets the state of the previous button.
+/// </summary>
+/// <returns>Returns boolean.</returns>
+bool MouseTracker::GetPreviousButtonState() const
+{
+	return this->previousButtonState;
+}
+
+/// <summary>
+/// Gets the previous mouse position.
+/// </summary>
+/// <returns>Returns 2D vector.</returns>
+const XMFLOAT2& MouseTracker::GetPreviousMousePosition() const
+{
+	return this->previousMousePosition;
+}
+
+/// <summary>
+/// Gets the state of the current button.
+/// </summary>
+/// <returns>Returns boolean.</returns>
+bool MouseTracker::GetCurrentButtonState() const
+{
+	return this->currentButtonState;
+}
+
+/// <summary>
+/// Gets the current mouse position.
+/// </summary>
+/// <returns>Returns 2D vector.</returns>
+const XMFLOAT2& MouseTracker::GetCurrentMousePosition() const
+{
+	return this->currentMousePosition;
+}
+
+/// <summary>
+/// Gets the raw delta.
+/// </summary>
+/// <returns>Returns 2D vector.</returns>
+XMFLOAT2 MouseTracker::GetRawDelta() const
+{
+	return this->CalculateDelta();
+}
+
+/// <summary>
+/// Gets the raw horizontal delta.
+/// </summary>
+/// <returns>Returns float.</returns>
+float MouseTracker::GetRawHorizontalDelta() const
+{
+	return GetRawDelta().x;
+}
+
+/// <summary>
+/// Gets the raw vertical delta.
+/// </summary>
+/// <returns>Returns float.</returns>
+float MouseTracker::GetRawVerticalDelta() const
+{
+	return GetRawDelta().y;
+}
+
+/// <summary>
+/// Gets the delta between 0 and 1.
+/// </summary>
+/// <param name="_min">The minimum.</param>
+/// <param name="_max">The maximum.</param>
+/// <returns></returns>
+XMFLOAT2 MouseTracker::GetDelta(XMFLOAT2 _min, XMFLOAT2 _max) const
+{
+	float x = GetHorizontalDelta(_min.x, _max.x);
+	float y = GetVerticalDelta(_min.y, _max.y);
+
+	return XMFLOAT2(x, y);
+}
+
+/// <summary>
+/// Gets the horizontal delta.
+/// </summary>
+/// <param name="_min">The minimum.</param>
+/// <param name="_max">The maximum.</param>
+/// <returns>Returns float.</returns>
+float MouseTracker::GetHorizontalDelta(float _min, float _max) const
+{
+	return range(this->CalculateDeltaHorizontal(), _min, _max, 0.0f, 1.0f);
+}
+
+/// <summary>
+/// Gets the vertical delta.
+/// </summary>
+/// <param name="_min">The minimum.</param>
+/// <param name="_max">The maximum.</param>
+/// <returns>Returns float.</returns>
+float MouseTracker::GetVerticalDelta(float _min, float _max) const
+{
+	return range(this->CalculateDeltaVertical(), _min, _max, 0.0f, 1.0f);
+}
+
+// --------------------------------------
+// Service methods.
+// --------------------------------------
+
+/// <summary>
+/// Updates the specified current state.
+/// </summary>
+/// <param name="_currentState">if set to <c>true</c> [current state].</param>
+/// <param name="_currentPosition">The current position.</param>
+void MouseTracker::Update(bool _currentState, XMFLOAT2 _currentPosition)
+{
+	// Overwrites previous button state and position.
+	this->SetPreviousButtonState(this->currentButtonState);
+	this->SetPreviousMousePosition(this->currentMousePosition);
+
+	// Update the current state and position.
+	this->SetCurrentButtonState(_currentState);
+	this->SetCurrentMousePosition(_currentPosition);
+}
+
+/// <summary>
+/// Updates the specified current state.
+/// </summary>
+/// <param name="_currentState">if set to <c>true</c> [current state].</param>
+/// <param name="_mouseX">The mouse x.</param>
+/// <param name="_mouseY">The mouse y.</param>
+void MouseTracker::Update(bool _currentState, float _mouseX, float _mouseY)
+{
+	this->Update(_currentState, XMFLOAT2(_mouseX, _mouseY));
+}
+
+// --------------------------------------
+// --------------------------------------
+// Private.
+// --------------------------------------
+// --------------------------------------
+
+// --------------------------------------
+// Mutators.
+// --------------------------------------
+
+/// <summary>
+/// Sets the state of the previous button.
+/// </summary>
+/// <param name="_state">if set to <c>true</c> [state].</param>
+void MouseTracker::SetPreviousButtonState(bool _state)
+{
+	this->previousButtonState = _state;
+}
+
+/// <summary>
+/// Sets the state of the current button.
+/// </summary>
+/// <param name="_state">if set to <c>true</c> [state].</param>
+void MouseTracker::SetCurrentButtonState(bool _state) 
+{
+	this->currentButtonState = _state;
+}
+
+/// <summary>
+/// Sets the previous mouse position.
+/// </summary>
+/// <param name="_position">The position.</param>
+void MouseTracker::SetPreviousMousePosition(XMFLOAT2 _position)
+{
+	this->previousMousePosition = _position;
+}
+
+/// <summary>
+/// Sets the current mouse position.
+/// </summary>
+/// <param name="_position">The position.</param>
+void MouseTracker::SetCurrentMousePosition(XMFLOAT2 _position)
+{
+	this->currentMousePosition = _position;
+}
+
+// --------------------------------------
+// Helper methods.
+// --------------------------------------
+
+/// <summary>
+/// Calculates the delta.
+/// </summary>
+/// <returns>Returns delta XY in a 2D vector.</returns>
+XMFLOAT2 MouseTracker::CalculateDelta() const
+{
+	return XMFLOAT2(
+		this->CalculateDeltaHorizontal(),
+		this->CalculateDeltaVertical()
+	);
+}
+
+/// <summary>
+/// Calculates the delta vertical.
+/// </summary>
+/// <returns>Returns delta X.</returns>
+float MouseTracker::CalculateDeltaHorizontal() const
+{
+	float pX = this->previousMousePosition.x;
+	float cX = this->currentMousePosition.x;
+	return (cX - pX);
+}
+
+/// <summary>
+/// Calculates the delta vertical.
+/// </summary>
+/// <returns>Returns delta Y.</returns>
+float MouseTracker::CalculateDeltaVertical() const
+{
+	float pY = this->previousMousePosition.y;
+	float cY = this->currentMousePosition.y;
+	return (cY - pY);
+}
+
+#pragma endregion
+
 #pragma region Camera - Camera object definition/implementation.
 
 // --------------------------------------
@@ -995,6 +1365,7 @@ void swap(Camera& lhs, Camera& rhs)
 	swap(lhs.settings, rhs.settings);
 	swap(lhs.view, rhs.view);
 	swap(lhs.projection, rhs.projection);
+	swap(lhs.tracker, rhs.tracker);
 }
 
 // ---------------------
@@ -1019,7 +1390,7 @@ Camera::Camera(CameraOptions options)
 /// <param name="transform">The transform.</param>
 Camera::Camera(CameraOptions options, TransformDescription transform)
 	: settings{ options }, transform{ transform },
-	  view(), projection() {}
+	  view(), projection(), tracker() {}
 
 /// <summary>
 /// Initializes a new instance of the <see cref="Camera"/> class.
@@ -1085,6 +1456,7 @@ Camera::Camera(const Camera& other)
 	this->settings = other.settings; // We wrote our own copy assignment!
 	this->view = other.view;
 	this->projection = other.projection;
+	this->tracker = other.tracker;
 }
 
 /// <summary>
@@ -1165,6 +1537,24 @@ void Camera::GetTransform(TransformDescription& target) const
 	target = transform;
 }
 
+/// <summary>
+/// Gets the mouse tracker.
+/// </summary>
+/// <returns>Returns the tracker.</returns>
+const MouseTracker& Camera::GetMouseTracker() const
+{
+	return tracker;
+}
+
+/// <summary>
+/// Gets the mouse tracker.
+/// </summary>
+/// <param name="target">The target.</param>
+void Camera::GetMouseTracker(MouseTracker& target) const
+{
+	target = tracker;
+}
+
 // ---------------------
 // Mutators.
 
@@ -1202,6 +1592,53 @@ void Camera::SetClippingPlane(float nearPlane, float farPlane)
 
 // ---------------------
 // Service methods.
+
+/// <summary>
+/// Resets this instance.
+/// </summary>
+void Camera::Reset()
+{
+	this->transform.Reset();
+	this->UpdateViewMatrix();
+	this->UpdateProjectionMatrix();
+}
+
+/// <summary>
+/// Updates the mouse.
+/// </summary>
+/// <param name="_currentState">if set to <c>true</c> [current state].</param>
+/// <param name="_mouseX">The mouse x.</param>
+/// <param name="_mouseY">The mouse y.</param>
+void Camera::UpdateMouse(
+	bool _currentState,
+	float _mouseX, float _mouseY) 
+{
+	this->tracker.Update(_currentState, _mouseX, _mouseY);
+}
+
+/// <summary>
+/// Updates the position.
+/// </summary>
+/// <param name="speed">The speed.</param>
+/// <param name="isRelative">if set to <c>true</c> [is relative].</param>
+void Camera::UpdatePosition(
+	XMFLOAT3 speed, bool isRelative /* = true */)
+{
+	this->transform.UpdatePosition(speed, isRelative);
+	this->UpdateViewMatrix();
+}
+
+/// <summary>
+/// Updates the rotation.
+/// </summary>
+/// <param name="speed">The speed.</param>
+/// <param name="isRelative">if set to <c>true</c> [is relative].</param>
+void Camera::UpdateRotation(
+	XMFLOAT3 speed, bool isRelative /* = true */)
+{
+	this->transform.UpdateRotation(speed, isRelative);
+	this->UpdateViewMatrix();
+}
 
 /// <summary>
 /// Updates the position.

@@ -18,6 +18,25 @@ using namespace DirectX;
 // -----------------------------------------------
 
 // -----------------------------------------------
+// Friend methods.
+// -----------------------------------------------
+
+/// <summary>
+/// Swaps the specified LHS.
+/// </summary>
+/// <param name="lhs">The LHS.</param>
+/// <param name="rhs">The RHS.</param>
+void swap(GameEntity& lhs, GameEntity& rhs)
+{
+	using std::swap;
+
+	swap(lhs.material, rhs.material);
+	swap(lhs.transformBuffer, rhs.transformBuffer);
+	swap(lhs.local, rhs.local);
+	swap(lhs.sharedMesh, rhs.sharedMesh);
+}
+
+// -----------------------------------------------
 // Constructors.
 // -----------------------------------------------
 
@@ -27,13 +46,12 @@ using namespace DirectX;
 /// <summary>
 /// Sets reference to shared Mesh* and sets default values for the world matrix and transformations.
 /// </summary>
+/// <param name="_material">Material reference.</param>
 /// <param name="sharedMesh">Shared mesh reference.</param>
-GameEntity::GameEntity(MeshReference& mesh)
-	: sharedMesh(mesh), transformBuffer(TransformBuffer()), local(TRANSFORM())
+GameEntity::GameEntity(Material& _material, MeshReference& mesh)
+	: material{ &_material }, sharedMesh(mesh), transformBuffer(TransformBuffer()), local(TRANSFORM())
 {
 	// Initialize members.
-	this->sharedMesh = mesh;	// Assign the parameter. Increases ref count.
-	this->local = TRANSFORM();
 	this->CreateTransformations();  // Initialize the local.
 }
 
@@ -47,9 +65,9 @@ GameEntity::GameEntity(MeshReference& mesh)
 /// <param name="pX">Position data.</param>
 /// <param name="pY">Position data.</param>
 /// <param name="pZ">Position data.</param>
-GameEntity::GameEntity(MeshReference& sharedMesh,
+GameEntity::GameEntity(Material& _material, MeshReference& sharedMesh,
 	float pX, float pY, float pZ)
-	: GameEntity(sharedMesh)
+	: GameEntity(_material, sharedMesh)
 {
 	// Initialize
 	local.SetPosition(pX, pY, pZ);
@@ -65,10 +83,10 @@ GameEntity::GameEntity(MeshReference& sharedMesh,
 /// <param name="sX">Scale data.</param>
 /// <param name="sY">Scale data.</param>
 /// <param name="sZ">Scale data.</param>
-GameEntity::GameEntity(MeshReference& sharedMesh,
+GameEntity::GameEntity(Material& _material, MeshReference& sharedMesh,
 	float pX, float pY, float pZ,
 	float sX, float sY, float sZ)
-	: GameEntity(sharedMesh, pX, pY, pZ)
+	: GameEntity(_material, sharedMesh, pX, pY, pZ)
 {
 	// Initialize
 	local.SetScale(sX, sY, sZ);
@@ -88,11 +106,11 @@ GameEntity::GameEntity(MeshReference& sharedMesh,
 /// <param name="rY">Rotation data.</param>
 /// <param name="rZ">Rotation data.</param>
 /// <param name="rW">Rotation data.</param>
-GameEntity::GameEntity(MeshReference& sharedMesh,
+GameEntity::GameEntity(Material& _material, MeshReference& sharedMesh,
 	float pX, float pY, float pZ,
 	float sX, float sY, float sZ,
 	float rX, float rY, float rZ, float rW)
-	: GameEntity(sharedMesh, pX, pY, pZ, sX, sY, sZ)
+	: GameEntity(_material, sharedMesh, pX, pY, pZ, sX, sY, sZ)
 {
 	// Initialize
 	local.SetRotation(rX, rY, rZ, rW);
@@ -104,9 +122,9 @@ GameEntity::GameEntity(MeshReference& sharedMesh,
 /// </summary>
 /// <param name="sharedMesh">Shared mesh reference.</param>
 /// <param name="t">Transformation data.</param>
-GameEntity::GameEntity(MeshReference& sharedMesh,
+GameEntity::GameEntity(Material& _material, MeshReference& sharedMesh,
 	const TRANSFORM t)
-	: GameEntity(sharedMesh,
+	: GameEntity(_material, sharedMesh,
 		t.pX, t.pY, t.pZ,
 		t.sX, t.sY, t.sZ,
 		t.rX, t.rY, t.rZ, t.rW)
@@ -123,8 +141,44 @@ GameEntity::GameEntity(MeshReference& sharedMesh,
 GameEntity::~GameEntity()
 {
 	// Meshes are handled by shared_ptr reference and will be deleted once there are no more references.
+	material = nullptr;
 	sharedMesh.reset();
 }
+
+/// <summary>
+/// Initializes a new instance of the <see cref="GameEntity"/> class.
+/// </summary>
+/// <param name="other">The other.</param>
+GameEntity::GameEntity(const GameEntity& other)
+{
+	// Copy member values.
+	this->material = other.material;
+	this->local = other.local;
+	this->sharedMesh = other.sharedMesh;
+	this->transformBuffer = other.transformBuffer;
+}
+
+/// <summary>
+/// Initializes a new instance of the <see cref="GameEntity"/> class.
+/// </summary>
+/// <param name="other">The other.</param>
+GameEntity::GameEntity(GameEntity&& other)
+	: GameEntity(*other.material, other.sharedMesh)
+{
+	swap(*this, other);
+}
+
+/// <summary>
+/// Unified copy and move assignment operator.
+/// </summary>
+/// <param name="other">The other.</param>
+/// <returns>Returns entity.</returns>
+GameEntity& GameEntity::operator=(GameEntity other)
+{
+	swap(*this, other);
+	return *this;
+}
+
 
 // -----------------------------------------------
 // Static methods.
@@ -136,24 +190,26 @@ GameEntity::~GameEntity()
 /// <summary>
 /// Factory method to create a single entity.
 /// </summary>
-/// <param name="gameEntity"></param>
-/// <param name="sharedMesh"></param>
-void GameEntity::CreateGameEntity(GameEntity& gameEntity, MeshReference& sharedMesh)
+/// <param name="gameEntities">Game entity.</param>
+/// <param name="material">Material to use.</param>
+/// <param name="sharedMesh">Shared mesh reference.</param>
+void GameEntity::CreateGameEntity(GameEntity& gameEntity, Material& material, MeshReference& sharedMesh)
 {
 	// Assign a game entity to the provided reference.
-	gameEntity = GameEntity(sharedMesh);
+	gameEntity = GameEntity(material, sharedMesh);
 }
 
 /// <summary>
 /// Create specified number of game entities and append them to an existing std::vector.
 /// </summary>
 /// <param name="gameEntities">Collection of game entities.</param>
+/// <param name="material">Material to use.</param>
 /// <param name="sharedMesh">Shared mesh reference.</param>
 /// <param name="count">Number of entities to create.</param>
-void GameEntity::CreateGameEntities(GameEntityCollection& gameEntities, MeshReference& sharedMesh, int count)
+void GameEntity::CreateGameEntities(GameEntityCollection& gameEntities, Material& material, MeshReference& sharedMesh, int count)
 {
 	for (int i = 0; i < count; i++) {
-		std::unique_ptr<GameEntity> entity(new GameEntity(sharedMesh));
+		std::unique_ptr<GameEntity> entity(new GameEntity(material, sharedMesh));
 		gameEntities.push_back(std::move(entity));
 	}
 }
@@ -356,6 +412,15 @@ const GameEntity::MeshReference& GameEntity::GetMesh() const
 	return this->sharedMesh;
 }
 
+// ----------
+// MATERIAL
+
+const Material& GameEntity::GetMaterial() const 
+{
+	return *material;
+}
+
+
 // -----------------------------------------------
 // Mutators.
 // -----------------------------------------------
@@ -370,6 +435,15 @@ const GameEntity::MeshReference& GameEntity::GetMesh() const
 void GameEntity::SetTransform(const TRANSFORM& transformation)
 {
 	local = transformation;
+}
+
+/// <summary>
+/// Sets the material.
+/// </summary>
+/// <param name="_material">The material.</param>
+void GameEntity::SetMaterial(Material& _material)
+{
+	material = &_material;
 }
 
 // -----------------------------------------------

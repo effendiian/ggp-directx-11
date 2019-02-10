@@ -10,6 +10,7 @@
 #include "Mesh.h"
 #include "Transform.h"
 #include "TransformBuffer.h"
+#include "Material.h"
 
 class GameEntity
 {
@@ -32,34 +33,44 @@ public:
 	/// Collection of unique GameEntity pointers.
 	/// </summary>
 	typedef std::vector<GameEntityReference> GameEntityCollection;
+	
+	// -----------------------------------------------
+	// Friend methods.
+	// -----------------------------------------------
 
+	friend void swap(GameEntity& lhs, GameEntity& rhs);
 
 	// -----------------------------------------------
 	// Constructors.
 	// -----------------------------------------------
 
 	// Pointer to shared mesh.
-	GameEntity(MeshReference& sharedMesh);
+	GameEntity(Material& _material, MeshReference& sharedMesh);
 
 	// Initialize game entity with a starting position.
-	GameEntity(MeshReference& sharedMesh, float pX, float pY, float pZ);
+	GameEntity(Material& _material, MeshReference& sharedMesh, float pX, float pY, float pZ);
 
 	// Initialize game entity with a starting position and scale.
-	GameEntity(MeshReference& sharedMesh,
+	GameEntity(Material& _material, MeshReference& sharedMesh,
 		float pX, float pY, float pZ,
 		float sX, float sY, float sZ);
 
 	// Initialize game entity with a starting position, scale, and rotation.
-	GameEntity(MeshReference& sharedMesh,
+	GameEntity(Material& _material, MeshReference& sharedMesh,
 		float pX, float pY, float pZ,
 		float sX, float sY, float sZ,
 		float rX, float rY, float rZ, float rW);
 
 	// Initialize game entity with existing Transform.
-	GameEntity(MeshReference& sharedMesh, const TRANSFORM t);
+	GameEntity(Material& _material, MeshReference& sharedMesh, const TRANSFORM t);
 
 	// Destructor.
 	~GameEntity();
+
+	// Copy/Move constructor/operator.
+	GameEntity(const GameEntity& other);
+	GameEntity(GameEntity&& other);
+	GameEntity& operator=(GameEntity other);
 
 	// -----------------------------------------------
 	// Static methods.
@@ -69,10 +80,10 @@ public:
 	// FACTORY METHODS
 
 	// Factory method to create a single entity.
-	static void CreateGameEntity(GameEntity& gameEntity, MeshReference& sharedMesh);
+	static void CreateGameEntity(GameEntity& gameEntity, Material& material, MeshReference& sharedMesh);
 
 	// Create specified number of game entities and append them to an existing std::vector.
-	static void CreateGameEntities(GameEntityCollection& gameEntities, MeshReference& sharedMesh, int count = 1);
+	static void CreateGameEntities(GameEntityCollection& gameEntities, Material& material, MeshReference& sharedMesh, int count = 1);
 
 	// Return a transformation between a set of bounds.
 	static const float GetRandomFloat(); // Get random value between 0 to RAND_MAX.
@@ -114,13 +125,23 @@ public:
 	// MESH
 	const MeshReference& GetMesh() const;
 
+	// ----------
+	// Material
+	const Material& GetMaterial() const;
+
 	// -----------------------------------------------
 	// Mutators.
 	// -----------------------------------------------
 
 	// ----------
 	// TRANSFORM
+
 	void SetTransform(const TRANSFORM& transformation);	// Set the value of the internal transform object to the parameter.
+
+	// ----------
+	// Material
+
+	void SetMaterial(Material& _material);
 
 	// -----------------------------------------------
 	// Service methods.
@@ -172,6 +193,9 @@ private:
 
 	// Transformation storage.
 	TRANSFORM local;
+	
+	// Material pointer.
+	Material* material;
 
 	// -----------------------------------------------
 	// Mutators.
