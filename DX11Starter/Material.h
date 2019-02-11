@@ -24,15 +24,15 @@ public:
 	Material(SimpleVertexShader& _vShd, SimplePixelShader& _pShd);
 	~Material();
 	Material(const Material& other);
-	Material(Material&& other);
+	Material(Material&& other) noexcept;
 	Material& operator=(Material other);
 
 	// -----------------------------------
 	// Accessors.
 	// -----------------------------------
 
-	const SimpleVertexShader& GetVertexShader() const;
-	const SimplePixelShader& GetPixelShader() const;
+	SimpleVertexShader* GetVertexShader() const;
+	SimplePixelShader* GetPixelShader() const;
 
 	// -----------------------------------
 	// Mutators.

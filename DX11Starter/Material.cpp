@@ -65,7 +65,7 @@ Material::Material(const Material& other)
 /// Initializes a new instance of the <see cref="Material"/> class.
 /// </summary>
 /// <param name="other">The other.</param>
-Material::Material(Material&& other)
+Material::Material(Material&& other) noexcept
 	: Material() // Initialize for temporary swap.
 {
 	// Swap.
@@ -92,18 +92,18 @@ Material& Material::operator=(Material other)
 /// Gets the vertex shader.
 /// </summary>
 /// <returns>Returns simple shader.</returns>
-const SimpleVertexShader& Material::GetVertexShader() const
+SimpleVertexShader* Material::GetVertexShader() const
 {
-	return *(this->vertexShader);
+	return this->vertexShader;
 }
 
 /// <summary>
 /// Gets the pixel shader.
 /// </summary>
 /// <returns>Returns simple shader.</returns>
-const SimplePixelShader& Material::GetPixelShader() const
+SimplePixelShader* Material::GetPixelShader() const
 {
-	return *(this->pixelShader);
+	return this->pixelShader;
 }
 
 // -----------------------------------

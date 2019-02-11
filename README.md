@@ -36,15 +36,15 @@ This branch contains the work for [Assignment 4: Cameras & Materials](https://my
 
 ### Overview ###
 
-[ ] Create a **camera class** that acts like a first person flying camera (with user input).
+[X] Create a **camera class** that acts like a first person flying camera (with user input).
 
-[ ] Make sure the camera class properly updates its **view and projection matrices**.
+[X] Make sure the camera class properly updates its **view and projection matrices**.
 
-[ ] Create a **material class** that represents a set of vertex and pixel shaders.
+[X] Create a **material class** that represents a set of vertex and pixel shaders.
 
-[ ] Update your entity class to also keep track of **its own material**.
+[X] Update your entity class to also keep track of **its own material**.
 
-[ ] Ensure you have no **warnings**, **memory leaks** or **DX resource leaks**.
+[X] Ensure you have no **warnings**, **memory leaks** or **DX resource leaks**.
 
 ## Binaries Not Included ##
 

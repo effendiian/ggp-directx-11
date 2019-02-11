@@ -162,7 +162,7 @@ GameEntity::GameEntity(const GameEntity& other)
 /// Initializes a new instance of the <see cref="GameEntity"/> class.
 /// </summary>
 /// <param name="other">The other.</param>
-GameEntity::GameEntity(GameEntity&& other)
+GameEntity::GameEntity(GameEntity&& other) noexcept
 	: GameEntity(*other.material, other.sharedMesh)
 {
 	swap(*this, other);
@@ -444,6 +444,29 @@ void GameEntity::SetTransform(const TRANSFORM& transformation)
 void GameEntity::SetMaterial(Material& _material)
 {
 	material = &_material;
+}
+
+/// <summary>
+/// Sets shaders and sends matrix data.
+/// </summary>
+/// <param name="_view">The view matrix.</param>
+/// <param name="_projection">The projection matrix.</param>
+void GameEntity::PrepareMaterial(XMFLOAT4X4& _view, XMFLOAT4X4& _projection)
+{
+	SimpleVertexShader* vs = this->GetMaterial().GetVertexShader();
+	SimplePixelShader* ps = this->GetMaterial().GetPixelShader();
+
+	// Set the matrices.
+	vs->SetMatrix4x4("world", this->GetWorldMatrix());
+	vs->SetMatrix4x4("view", _view);
+	vs->SetMatrix4x4("projection", _projection);
+
+	// Copy all buffer data to the vertex shader.
+	vs->CopyAllBufferData();
+
+	// Set the material shaders.
+	vs->SetShader();
+	ps->SetShader();
 }
 
 // -----------------------------------------------

@@ -99,9 +99,9 @@ Game::~Game()
 
 	// Delete our simple shader objects, which
 	// will clean up their own internal DirectX stuff
-	delete sharedMaterial;
 	delete vertexShader;
 	delete pixelShader;
+	delete sharedMaterial;
 }
 
 // --------------------------------------------------------
@@ -138,6 +138,9 @@ void Game::LoadShaders()
 
 	pixelShader = new SimplePixelShader(device, context);
 	pixelShader->LoadShaderFile(L"PixelShader.cso");
+
+	// Create material.
+	sharedMaterial = new Material(*vertexShader, *pixelShader);
 }
 
 void Game::CreateInput() 
@@ -357,9 +360,6 @@ void Game::CreateEntities() {
 
 	// Create entity collection.
 	gameEntities = GameEntityCollection();
-
-	// Create material.
-	sharedMaterial = new Material(*vertexShader, *pixelShader);
 
 	// Cycle through meshes, until entity count is fulfilled.
 	int meshID = -1;
@@ -815,26 +815,23 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - copy all buffer data.
 	for (int i = 0; i < gameEntityCount; i++)
 	{
-		// Load the values.
-		XMFLOAT4X4 entityWorldMatrix = gameEntities[i]->GetWorldMatrix();
-
 		// For each frame.
+		gameEntities[i]->PrepareMaterial(camera.GetViewMatrix(), camera.GetProjectionMatrix());
+
 		// - set matrices.
-		vertexShader->SetMatrix4x4("world", entityWorldMatrix);
-		// vertexShader->SetMatrix4x4("view", viewMatrix);
-		// vertexShader->SetMatrix4x4("projection", projectionMatrix);
-		vertexShader->SetMatrix4x4("view", camera.GetViewMatrix());
-		vertexShader->SetMatrix4x4("projection", camera.GetProjectionMatrix());
+		// vertexShader->SetMatrix4x4("world", entityWorldMatrix);
+		// vertexShader->SetMatrix4x4("view", camera.GetViewMatrix());
+		// vertexShader->SetMatrix4x4("projection", camera.GetProjectionMatrix());
 
 		// Send buffer data to the vertex shader.
-		vertexShader->CopyAllBufferData();
+		// vertexShader->CopyAllBufferData();
 
 		// Set the vertex and pixel shaders to use for the next Draw() command
 		//  - These don't technically need to be set every frame...YET
 		//  - Once you start applying different shaders to different objects,
 		//    you'll need to swap the current shaders before each draw
-		vertexShader->SetShader();
-		pixelShader->SetShader();
+		// vertexShader->SetShader();
+		// pixelShader->SetShader();
 
 		// Get reference to the bufferMesh.
 		pSharedMesh bufferMesh = gameEntities[i]->GetMesh();

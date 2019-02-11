@@ -69,7 +69,7 @@ public:
 
 	// Copy/Move constructor/operator.
 	GameEntity(const GameEntity& other);
-	GameEntity(GameEntity&& other);
+	GameEntity(GameEntity&& other) noexcept;
 	GameEntity& operator=(GameEntity other);
 
 	// -----------------------------------------------
@@ -142,6 +142,7 @@ public:
 	// Material
 
 	void SetMaterial(Material& _material);
+	void PrepareMaterial(DirectX::XMFLOAT4X4& _view, DirectX::XMFLOAT4X4& _projection);
 
 	// -----------------------------------------------
 	// Service methods.
