@@ -39,14 +39,12 @@ class Game
 	} ACTION;
 
 	// data.
-	typedef DirectX::XMFLOAT4 fColor;
 	typedef GameEntity::MeshReference pSharedMesh;
 	typedef GameEntity::GameEntityReference pUniqueGameEntity;
 
 	// collections
 	typedef std::vector<unsigned int> IndexCollection;
 	typedef std::vector<Vertex> VertexCollection;
-	typedef std::vector<DirectX::XMFLOAT4> ColorCollection;
 	typedef std::vector<GameEntity::MeshReference> MeshCollection;
 	typedef GameEntity::GameEntityCollection GameEntityCollection;
 	

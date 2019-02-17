@@ -232,29 +232,10 @@ void Game::CreateMatrices()
 // --------------------------------------------------------
 void Game::CreateBasicGeometry()
 {
-	// Create some temporary variables to represent colors
-	// - Not necessary, just makes things more readable
-	ColorCollection colors;
-	colors.push_back(fColor(1.0f, 0.0f, 0.0f, 1.0f)); // red;
-	colors.push_back(fColor(0.0f, 1.0f, 0.0f, 1.0f)); // green;
-	colors.push_back(fColor(0.0f, 0.0f, 1.0f, 1.0f)); // blue;
-	colors.push_back(fColor(0.5f, 0.0f, 0.0f, 1.0f)); // maroon;
-	colors.push_back(fColor(0.0f, 1.0f, 1.0f, 1.0f)); // aqua;
-	colors.push_back(fColor(0.5f, 0.5f, 0.5f, 1.0f)); // silver;
-	colors.push_back(fColor(1.0f, 0.0f, 1.0f, 1.0f)); // fuchsia;
-	colors.push_back(fColor(0.5f, 0.5f, 0.0f, 1.0f)); // olive;
-	colors.push_back(fColor(1.0f, 1.0f, 1.0f, 1.0f)); // white;
+	// Create values for normals and uvs.
+	XMFLOAT3 n (0.0f, 0.0f, -1.0f);
+	XMFLOAT2 uv (0.0f, 0.0f);
 
-	// Name colors for ease of use.
-	fColor red = colors[0];
-	fColor green = colors[1];
-	fColor blue = colors[2];
-	fColor maroon = colors[3];
-	fColor aqua = colors[4];
-	fColor silver = colors[5];
-	fColor fuchsia = colors[6];
-	fColor olive = colors[7];
-	fColor white = colors[8];
 
 	// Set up the vertices of the triangle we would like to draw
 	// - We're going to copy this array, exactly as it exists in memory
@@ -266,9 +247,9 @@ void Game::CreateBasicGeometry()
 		// 1: (3, -2, 0)
 		// 2: (0, 3, 0)
 		{
-			Vertex({ XMFLOAT3(-3.0f, -2.0f, +0.0f), white }),
-			Vertex({ XMFLOAT3(+3.0f, -2.0f, +0.0f), silver }),
-			Vertex({ XMFLOAT3(+0.0f, +3.0f, +0.0f), green }),
+			Vertex({ XMFLOAT3(-3.0f, -2.0f, +0.0f), n, uv }),
+			Vertex({ XMFLOAT3(+3.0f, -2.0f, +0.0f), n, uv }),
+			Vertex({ XMFLOAT3(+0.0f, +3.0f, +0.0f), n, uv }),
 		},
 
 		// Hexagon
@@ -279,12 +260,12 @@ void Game::CreateBasicGeometry()
 		// 4: (-2, -5, 0)
 		// 5: (-6, 0, 0)
 		{
-			Vertex({ XMFLOAT3(-2.5f, +5.0f, +0.0f), red }),
-			Vertex({ XMFLOAT3(+2.5f, +5.0f, +0.0f), maroon }),
-			Vertex({ XMFLOAT3(+6.0f, +0.0f, +0.0f), fuchsia }),
-			Vertex({ XMFLOAT3(+2.5f, -5.0f, +0.0f), green }),
-			Vertex({ XMFLOAT3(-2.5f, -5.0f, +0.0f), aqua }),
-			Vertex({ XMFLOAT3(-6.0f, +0.0f, +0.0f), olive }),
+			Vertex({ XMFLOAT3(-2.5f, +5.0f, +0.0f), n, uv }),
+			Vertex({ XMFLOAT3(+2.5f, +5.0f, +0.0f), n, uv }),
+			Vertex({ XMFLOAT3(+6.0f, +0.0f, +0.0f), n, uv }),
+			Vertex({ XMFLOAT3(+2.5f, -5.0f, +0.0f), n, uv }),
+			Vertex({ XMFLOAT3(-2.5f, -5.0f, +0.0f), n, uv }),
+			Vertex({ XMFLOAT3(-6.0f, +0.0f, +0.0f), n, uv }),
 		},
 
 		// Square
@@ -293,10 +274,10 @@ void Game::CreateBasicGeometry()
 		// 2: (2, -2, 0)
 		// 3: (-2, -2, 0)
 		{
-			Vertex({ XMFLOAT3(-2.0f, +2.0f, +0.0f), aqua }),
-			Vertex({ XMFLOAT3(+2.0f, +2.0f, +0.0f), silver }),
-			Vertex({ XMFLOAT3(+2.0f, -2.0f, +0.0f), fuchsia }),
-			Vertex({ XMFLOAT3(-2.0f, -2.0f, +0.0f), blue }),
+			Vertex({ XMFLOAT3(-2.0f, +2.0f, +0.0f), n, uv }),
+			Vertex({ XMFLOAT3(+2.0f, +2.0f, +0.0f), n, uv }),
+			Vertex({ XMFLOAT3(+2.0f, -2.0f, +0.0f), n, uv }),
+			Vertex({ XMFLOAT3(-2.0f, -2.0f, +0.0f), n, uv }),
 		},
 
 		/*
