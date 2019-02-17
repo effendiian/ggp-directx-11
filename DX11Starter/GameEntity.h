@@ -141,6 +141,7 @@ public:
 	// ----------
 	// Material
 
+	void SetColor(DirectX::XMFLOAT4 _surface);
 	void SetMaterial(Material& _material);
 	void PrepareMaterial(DirectX::XMFLOAT4X4& _view, DirectX::XMFLOAT4X4& _projection);
 
@@ -197,6 +198,9 @@ private:
 	
 	// Material pointer.
 	Material* material;
+
+	// Create a surface color.
+	DirectX::XMFLOAT4 surfaceColor;
 
 	// -----------------------------------------------
 	// Mutators.

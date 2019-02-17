@@ -811,7 +811,7 @@ CameraOptions::CameraOptions()
 /// <param name="nearClip">The near clip.</param>
 /// <param name="farClip">The far clip.</param>
 CameraOptions::CameraOptions(float fov, float w, float h, float nearClip, float farClip) 
-	: fieldOfView{ fov }, width { w }, height{ h }, aspectRatio{ w/h }, nearPlane { nearClip }, farPlane { farClip }
+	: fieldOfView{ fov }, width { w }, height{ h }, aspectRatio{ (float) w/h }, nearPlane { nearClip }, farPlane { farClip }
 {
 	this->SetFieldOfView(fov);
 	this->SetWidth(w);
@@ -996,7 +996,7 @@ void CameraOptions::SetFarClippingPlane(float value)
 /// </summary>
 void CameraOptions::UpdateAspectRatio()
 {
-	this->aspectRatio = (float)(this->width / this->height);
+	this->aspectRatio = (float)((float) this->width / (float) this->height);
 }
 
 #pragma endregion

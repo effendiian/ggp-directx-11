@@ -34,6 +34,7 @@ void swap(GameEntity& lhs, GameEntity& rhs)
 	swap(lhs.transformBuffer, rhs.transformBuffer);
 	swap(lhs.local, rhs.local);
 	swap(lhs.sharedMesh, rhs.sharedMesh);
+	swap(lhs.surfaceColor, rhs.surfaceColor);
 }
 
 // -----------------------------------------------
@@ -49,7 +50,7 @@ void swap(GameEntity& lhs, GameEntity& rhs)
 /// <param name="_material">Material reference.</param>
 /// <param name="sharedMesh">Shared mesh reference.</param>
 GameEntity::GameEntity(Material& _material, MeshReference& mesh)
-	: material{ &_material }, sharedMesh(mesh), transformBuffer(TransformBuffer()), local(TRANSFORM())
+	: material{ &_material }, sharedMesh(mesh), transformBuffer(TransformBuffer()), local(TRANSFORM()), surfaceColor(XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f))
 {
 	// Initialize members.
 	this->CreateTransformations();  // Initialize the local.
@@ -156,6 +157,7 @@ GameEntity::GameEntity(const GameEntity& other)
 	this->local = other.local;
 	this->sharedMesh = other.sharedMesh;
 	this->transformBuffer = other.transformBuffer;
+	this->surfaceColor = other.surfaceColor;
 }
 
 /// <summary>
@@ -447,22 +449,35 @@ void GameEntity::SetMaterial(Material& _material)
 }
 
 /// <summary>
+/// Sets the color.
+/// </summary>
+/// <param name="_surface">The surface.</param>
+void GameEntity::SetColor(XMFLOAT4 _surface)
+{
+	this->surfaceColor = _surface;
+}
+
+/// <summary>
 /// Sets shaders and sends matrix data.
 /// </summary>
 /// <param name="_view">The view matrix.</param>
 /// <param name="_projection">The projection matrix.</param>
 void GameEntity::PrepareMaterial(XMFLOAT4X4& _view, XMFLOAT4X4& _projection)
 {
-	SimpleVertexShader* vs = this->GetMaterial().GetVertexShader();
 	SimplePixelShader* ps = this->GetMaterial().GetPixelShader();
+	SimpleVertexShader* vs = this->GetMaterial().GetVertexShader();
+
+	// Add the surface color.
+	ps->SetFloat4("surface", surfaceColor);
 
 	// Set the matrices.
 	vs->SetMatrix4x4("world", this->GetWorldMatrix());
 	vs->SetMatrix4x4("view", _view);
 	vs->SetMatrix4x4("projection", _projection);
-
+	
 	// Copy all buffer data to the vertex shader.
 	vs->CopyAllBufferData();
+	ps->CopyAllBufferData();
 
 	// Set the material shaders.
 	vs->SetShader();
@@ -491,12 +506,12 @@ void GameEntity::Update(float deltaTime, float totalTime)
 	float x = magnitude * cosf(totalTime);
 	float y = magnitude * -sinf(totalTime);
 	float z = 0.0f;
-	// this->Move(x, y, z);
+	this->Move(x, y, z);
 	// printf("Move( %4.3f, %4.3f, %4.3f ) \n", x, y, z);
 
 	// Scale in pulsing fashion.
-	float pulse = 0.15f + (0.05f * -sinf(totalTime));
-	this->ScaleTo(pulse, pulse, 1.0f);
+	float pulse = 1.35f * (0.15f + (0.05f * -sinf(totalTime)));
+	this->ScaleTo(pulse, pulse, pulse);
 	// printf("Pulse ( %4.3f ) \n", pulse);
 
 	// Rotation around a particular axis.

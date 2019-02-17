@@ -31,6 +31,18 @@ Game::Game(HINSTANCE hInstance)
 	pixelShader = 0;
 	sharedMaterial = 0;
 
+	directionalLight1 = DirectionalLight{
+		XMFLOAT4(0.6f, 0.1f, 0.1f, 1.0f),
+		XMFLOAT4(0.1f, 0.24f, 1.0f, 1.0f),
+		XMFLOAT3(1.0f, 0.0f, 1.0f)
+	};
+
+	directionalLight2 = DirectionalLight{
+		XMFLOAT4(0.1f, 0.1f, 0.5f, 1.0f),
+		XMFLOAT4(1.0f, 0.6f, 0.5f, 1.0f),
+		XMFLOAT3(-1.0f, -1.0f, 0.0f)
+	};
+
 	// Initialize
 	// worldMatrix = XMFLOAT4X4();
 	// viewMatrix = XMFLOAT4X4();
@@ -44,7 +56,7 @@ Game::Game(HINSTANCE hInstance)
 
 	// Initialize the meshes.
 	meshCount = 3;
-	gameEntityCount = 9;
+	gameEntityCount = 18;
 
 	meshObjects = MeshCollection();
 	gameEntities = GameEntityCollection();
@@ -236,7 +248,6 @@ void Game::CreateBasicGeometry()
 	XMFLOAT3 n (0.0f, 0.0f, -1.0f);
 	XMFLOAT2 uv (0.0f, 0.0f);
 
-
 	// Set up the vertices of the triangle we would like to draw
 	// - We're going to copy this array, exactly as it exists in memory
 	//    over to a DirectX-controlled data structure (the vertex buffer)
@@ -335,6 +346,22 @@ void Game::CreateBasicGeometry()
 			device)
 		);
 	}
+
+	// Add new geometry.
+	std::vector<std::string> filepaths;
+	filepaths.push_back("../Assets/Models/helix.obj");
+	filepaths.push_back("../Assets/Models/cone.obj");
+	filepaths.push_back("../Assets/Models/cube.obj");
+	filepaths.push_back("../Assets/Models/cylinder.obj");
+	filepaths.push_back("../Assets/Models/sphere.obj");
+	filepaths.push_back("../Assets/Models/torus.obj");
+
+	// Loop through objects.
+	for (int m = 0; m < filepaths.size(); m++) {
+		char* charArr = &(filepaths[m])[0];
+		meshCount++;
+		meshObjects.push_back(std::make_shared<Mesh>(charArr, device));
+	}
 }
 
 void Game::CreateEntities() {
@@ -360,18 +387,21 @@ void Game::CreateEntities() {
 
 		// Create the transformations.
 		XMFLOAT3 bounds[] = {
-			XMFLOAT3(-2.5f, -2.0f, 1.0f),
-			XMFLOAT3(2.5f, 2.0f, 15.0f)
+			XMFLOAT3(-2.5f, -2.5f, 1.0f),
+			XMFLOAT3(2.5f, 2.5f, 15.0f)
 		};
 
 		XMFLOAT3 position = GameEntity::GetRandomTransform(bounds[0], bounds[1]);
-		XMFLOAT3 scale = GameEntity::GetRandomTransform(0.1f, 0.2f);
+		XMFLOAT3 scale = GameEntity::GetRandomTransform(0.1f, 0.3f);
 
 		// Create an entity with the appropriate mesh.
 		pUniqueGameEntity entity(new GameEntity(*sharedMaterial, mesh,
 			position.x, position.y, position.z,
 			scale.x, scale.y, scale.z)
 		);
+
+		float percentage = ((float)(i) / (float)(gameEntityCount)) * 0.5f;
+		entity->SetColor(XMFLOAT4(percentage * 0.5f, 0.5f + percentage, percentage, 0.1f));
 
 		// Print info about the entity.
 		// printf("{| Position [%d]: < %5.3f, %5.3f, %5.3f > | ", i, position.x, position.y, position.z);
@@ -796,13 +826,29 @@ void Game::Draw(float deltaTime, float totalTime)
 	// - copy all buffer data.
 	for (int i = 0; i < gameEntityCount; i++)
 	{
+		pixelShader->SetData(
+			"light1",
+			&directionalLight1,
+			sizeof(DirectionalLight)
+		);
+
+		pixelShader->SetData(
+			"light2",
+			&directionalLight2,
+			sizeof(DirectionalLight)
+		);
+		
 		// For each frame.
 		gameEntities[i]->PrepareMaterial(camera.GetViewMatrix(), camera.GetProjectionMatrix());
+
 
 		// - set matrices.
 		// vertexShader->SetMatrix4x4("world", entityWorldMatrix);
 		// vertexShader->SetMatrix4x4("view", camera.GetViewMatrix());
 		// vertexShader->SetMatrix4x4("projection", camera.GetProjectionMatrix());
+
+		// Send buffer data to the vertex shader.
+		// vertexShader->CopyAllBufferData();
 
 		// Send buffer data to the vertex shader.
 		// vertexShader->CopyAllBufferData();
@@ -813,7 +859,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		//    you'll need to swap the current shaders before each draw
 		// vertexShader->SetShader();
 		// pixelShader->SetShader();
-
+		
 		// Get reference to the bufferMesh.
 		pSharedMesh bufferMesh = gameEntities[i]->GetMesh();
 
@@ -834,8 +880,6 @@ void Game::Draw(float deltaTime, float totalTime)
 			0	   // Offset to add to each index when looking up vertices
 		);
 
-		// Send buffer data to the vertex shader.
-		// vertexShader->CopyAllBufferData();
 	}
 
 	// End of object loops.

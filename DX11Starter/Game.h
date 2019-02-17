@@ -6,6 +6,7 @@
 #include "SimpleShader.h"
 #include "Vertex.h"
 #include "Camera.h"
+#include "Lights.h"
 #include <DirectXMath.h>
 #include <vector>
 #include <map>
@@ -75,6 +76,10 @@ private:
 	void CreateMatrices();
 	void CreateBasicGeometry();
 	void CreateEntities();
+
+	// Light.
+	DirectionalLight directionalLight1;
+	DirectionalLight directionalLight2;
 
 	// Buffers to hold actual geometry data
 	int meshCount;

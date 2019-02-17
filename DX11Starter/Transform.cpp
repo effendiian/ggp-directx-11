@@ -328,9 +328,9 @@ const XMFLOAT4X4 TRANSFORM::GetWorldMatrix() const {
 	XMFLOAT4 rotation = this->GetRotation();
 
 	// Create the transformation matrices.
-	XMMATRIX TRANSLATION = XMMatrixTranslation(position.x, position.y, position.z);
-	XMMATRIX ROTATION = XMMatrixRotationQuaternion(XMLoadFloat4(&rotation));
 	XMMATRIX SCALE = XMMatrixScaling(scale.x, scale.y, scale.z);
+	XMMATRIX ROTATION = XMMatrixRotationQuaternion(XMLoadFloat4(&rotation));
+	XMMATRIX TRANSLATION = XMMatrixTranslation(position.x, position.y, position.z);
 
 	// Calculate the world matrix from SRT matrix multiplication.
 	XMMATRIX WMAT = SCALE * ROTATION * TRANSLATION;

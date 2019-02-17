@@ -12,6 +12,8 @@ public:
 		unsigned int* indices,
 		unsigned int indexCount,
 		ID3D11Device* device);
+	Mesh(char* filename,
+		ID3D11Device* device);
 	~Mesh();
 
 	// Accessor methods called to return buffers.
