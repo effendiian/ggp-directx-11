@@ -30,21 +30,16 @@ Throughout the semester, students were assigned different sections of the code t
 
 The master branch will always be the most feature complete; the most recent assignment will be merged back into the master after submission.
 
-## Assignment 4 - Cameras & Materials ##
+## Assignment 5 - Models & Lights ##
 
-This branch contains the work for [Assignment 4: Cameras & Materials](https://mycourses.rit.edu/d2l/le/content/736702/viewContent/5582577/View) (link requires access to MyCourses).
+This branch contains the work for [Assignment 5: Models & Lights](https://mycourses.rit.edu/d2l/le/content/736702/viewContent/5582585/View) (link requires access to MyCourses).
 
 ### Overview ###
 
-[X] Create a **camera class** that acts like a first person flying camera (with user input).
-
-[X] Make sure the camera class properly updates its **view and projection matrices**.
-
-[X] Create a **material class** that represents a set of vertex and pixel shaders.
-
-[X] Update your entity class to also keep track of **its own material**.
-
-[X] Ensure you have no **warnings**, **memory leaks** or **DX resource leaks**.
+- [ ] **Load meshes** from external .OBJ files.
+- [ ] Update C++ and your shaders to support a **single diffuse directional light** on your objects.
+- [ ] Add **at least one more light** to your scene.
+- [ ] Ensure you have no **warnings**, **memory leaks** or **DX resource leaks**.
 
 ## Binaries Not Included ##
 
