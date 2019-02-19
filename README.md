@@ -30,16 +30,16 @@ Throughout the semester, students were assigned different sections of the code t
 
 The master branch will always be the most feature complete; the most recent assignment will be merged back into the master after submission.
 
-## Assignment 5 - Models & Lights ##
+## Assignment 6: Textures ##
 
-This branch contains the work for [Assignment 5: Models & Lights](https://mycourses.rit.edu/d2l/le/content/736702/viewContent/5582585/View) (link requires access to MyCourses).
+This branch contains the work for [Assignment 6: Textures](https://mycourses.rit.edu/d2l/le/content/736702/viewContent/5582587/View) (link requires access to MyCourses).
 
 ### Overview ###
 
-- [x] **Load meshes** from external .OBJ files.
-- [x] Update C++ and your shaders to support a **single diffuse directional light** on your objects.
-- [x] Add **at least one more light** to your scene.
-- [x] Ensure you have no **warnings**, **memory leaks** or **DX resource leaks**.
+- [ ] Include the **DirectX Tool Kit**.
+- [ ] Load **at least two** textures.
+- [ ] Create a shader **sampler state**.
+- [ ] Update the **Material** and **Shader** classes.
 
 ## Binaries Not Included ##
 
